@@ -4,6 +4,7 @@ import numpy as np
 class NumpyBackend:
     name = "numpy"
 
+    # array ops
     array = staticmethod(np.array)
     zeros = staticmethod(np.zeros)
     ones = staticmethod(np.ones)
@@ -12,3 +13,8 @@ class NumpyBackend:
     norm = staticmethod(np.linalg.norm)
     sin = staticmethod(np.sin)
     cos = staticmethod(np.cos)
+
+    # execution transforms
+    @staticmethod
+    def jit(fn, **kwargs):
+        return fn  # no-op
