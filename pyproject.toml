@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "legion"
+version = "0.0.1"
+description = "A simulator-agnostic control and RL composition framework for legged robots"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [{ name = "Louis Gevers" }]
+
+# Common dependencies across all
+dependencies = ["numpy>=2.4.0", "PyYAML>=6.0"]
+
+[project.optional-dependencies]
+# TODO optional dependencies depending on backends of interest
+
+[tool.setuptools]
+packages = ["legion"]
