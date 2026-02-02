@@ -1,0 +1,9 @@
+from typing import Protocol
+
+from legion.physics import PhysicsState
+
+
+class Viewer(Protocol):
+    def render(self, state: PhysicsState): ...
+    def is_running(self) -> bool: ...
+    def close(self): ...
