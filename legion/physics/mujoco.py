@@ -2,6 +2,7 @@ import mujoco
 from numpy.typing import ArrayLike
 
 from legion.backend import get_backend, Backend
+from legion.embodiment import Embodiment
 
 from .base import PhysicsState, SensorData
 
@@ -9,7 +10,7 @@ from .base import PhysicsState, SensorData
 class MujocoPhysics:
     name = "mujoco"
 
-    def __init__(self, mjcf: str):
+    def __init__(self, embodiment: Embodiment, mjcf: str):
         # Lazy load backend
         self.backend = get_backend("numpy")
 
@@ -20,26 +21,12 @@ class MujocoPhysics:
         self._base_qpos_idx, self._base_qvel_idx = mj_base_indices(
             self._mj_model, self.backend
         )
-        self._joint_names, self._joint_qpos_idx, self._joint_qvel_idx = (
-            mj_joint_indices(self._mj_model, self.backend)
+        self._joint_qpos_idx, self._joint_qvel_idx = mj_joint_indices(
+            self._mj_model, embodiment, self.backend
         )
-        self._actuator_names = mj_actuator_names(self._mj_model)
-
-    @property
-    def joint_names(self):
-        return self._joint_names
-
-    @property
-    def actuator_names(self):
-        return self._actuator_names
-
-    @property
-    def n_joints(self):
-        return len(self._joint_names)
-
-    @property
-    def n_actuators(self):
-        return len(self._actuator_names)
+        self._actuator_idx = mj_actuator_indices(
+            self._mj_model, embodiment, self.backend
+        )
 
     def reset(self) -> PhysicsState:
         # Create blank data
@@ -54,7 +41,7 @@ class MujocoPhysics:
 
     def apply_torques(self, state: PhysicsState, tau: ArrayLike) -> PhysicsState:
         # MuJoCo state is mutable
-        state.data.ctrl[:] = tau
+        state.data.ctrl[self._actuator_idx] = tau
         return state
 
     def get_sensor_data(self, state: PhysicsState) -> SensorData:
@@ -62,7 +49,7 @@ class MujocoPhysics:
             t=self.backend.array(state.data.time),
             q=self.backend.array(state.data.qpos[self._joint_qpos_idx]),
             dq=self.backend.array(state.data.qvel[self._joint_qvel_idx]),
-            tau=self.backend.array(state.data.ctrl),
+            tau=self.backend.array(state.data.ctrl[self._actuator_idx]),
             base_xyz=self.backend.array(state.data.qpos[self._base_qpos_idx][:3]),
             base_quat=self.backend.array(state.data.qpos[self._base_qpos_idx][3:]),
             base_linear_vel=self.backend.array(
@@ -90,33 +77,35 @@ def mj_base_indices(
 
 
 def mj_joint_indices(
-    mj_model: mujoco._MjBindModel, backend: Backend
-) -> tuple[tuple[str, ...], ArrayLike, ArrayLike]:
-    """Extract joint names + qpos and qvel indices given the model"""
-    joint_names = []
+    mj_model: mujoco._MjBindModel, embodiment: Embodiment, backend: Backend
+) -> tuple[ArrayLike, ArrayLike]:
+    """Extract joint qpos and qvel indices given the model and embodiment"""
+
     joint_qpos_idx = []
     joint_qvel_idx = []
-    for j in range(mj_model.njnt):
-        # Ignore free joints
-        if mj_model.jnt_type[j] == mujoco.mjtJoint.mjJNT_FREE:
-            continue
+    for name in embodiment.joint_names:
+        try:
+            j = mj_model.joint(name)
+        except Exception:
+            raise ValueError(f"Embodiment joint '{name}' not found in MJCF")
 
-        # Ignore base
-        name = mj_model.joint(j).name
-        if name == "base":
-            continue
+        joint_qpos_idx.append(j.qposadr[0])
+        joint_qvel_idx.append(j.dofadr[0])
 
-        joint_names.append(name)
-        joint_qpos_idx.append(mj_model.jnt_qposadr[j])
-        joint_qvel_idx.append(mj_model.jnt_dofadr[j])
-
-    return (
-        tuple(joint_names),
-        backend.array(joint_qpos_idx),
-        backend.array(joint_qvel_idx),
-    )
+    return backend.array(joint_qpos_idx), backend.array(joint_qvel_idx)
 
 
-def mj_actuator_names(mj_model: mujoco._MjBindModel) -> tuple[str, ...]:
-    """Extract actuator names given the model"""
-    return tuple([mj_model.actuator(i).name for i in range(mj_model.nu)])
+def mj_actuator_indices(
+    mj_model: mujoco._MjBindModel, embodiment: Embodiment, backend: Backend
+) -> ArrayLike:
+    actuator_idx = []
+    """Extract actuator indices given the model an embodiment"""
+    for name in embodiment.actuator_names:
+        try:
+            a = mj_model.actuator(name)
+        except Exception:
+            raise ValueError(f"Embodiment actuator '{name}' not found in MJCF")
+
+        actuator_idx.append(a.id)
+
+    return backend.array(actuator_idx)

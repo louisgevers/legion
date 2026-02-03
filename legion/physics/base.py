@@ -2,6 +2,7 @@ from typing import Protocol, NamedTuple
 from numpy.typing import ArrayLike
 
 from legion.backend import Backend
+from legion.embodiment import Embodiment
 
 
 class PhysicsState(NamedTuple):
@@ -26,15 +27,7 @@ class PhysicsEngine(Protocol):
     name: str
     backend: Backend
 
-    # Model metadata (extracted from the physics)
-    @property
-    def joint_names(self) -> tuple[str, ...]: ...
-    @property
-    def actuator_names(self) -> tuple[str, ...]: ...
-    @property
-    def n_joints(self) -> int: ...
-    @property
-    def n_actuators(self) -> int: ...
+    def __init__(self, embodiment: Embodiment, **kwargs): ...
 
     # Simulation state functions
     def reset(self) -> PhysicsState: ...
