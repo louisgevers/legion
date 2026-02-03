@@ -19,3 +19,4 @@ class Go2(NamedTuple):
             for joint in ["hip", "thigh", "calf"]
         ]
     )
+    q_nominal = tuple([0.0, 0.9, -1.8] * 4)

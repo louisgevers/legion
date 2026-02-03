@@ -7,3 +7,4 @@ class Embodiment(Protocol):
     n_actuators: int
     joint_names: tuple[str, ...]
     actuator_names: tuple[str, ...]
+    q_nominal: tuple[float, ...]
