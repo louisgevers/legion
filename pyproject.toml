@@ -12,12 +12,18 @@ license = { file = "LICENSE" }
 authors = [{ name = "Louis Gevers" }]
 
 # Common dependencies across all
-dependencies = ["numpy>=2.4.0", "PyYAML>=6.0"]
+dependencies = ["numpy>=2.4.0", "PyYAML>=6.0", "tqdm>=4.0"]
 
 [project.optional-dependencies]
 # Simulator specific installs
 mujoco = ["mujoco==3.4.0"]
-mujoco-mjx = ["mujoco==3.4.0", "mujoco-mjx==3.4.0", "jax==0.8.2"]
+mujoco-mjx = [
+    "mujoco==3.4.0",
+    "mujoco-mjx==3.4.0",
+    "jax==0.8.2",
+    # Install CUDA libraries only if not on MacOS
+    "jax[cuda12]; sys_platform != 'darwin'"
+]
 
 [tool.setuptools]
 packages = ["legion"]

@@ -11,3 +11,6 @@ dist/
 .venv/
 env/
 venv/
+
+# VSCode
+.vscode
