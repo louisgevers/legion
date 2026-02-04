@@ -2,11 +2,13 @@ import mujoco
 from numpy.typing import ArrayLike
 
 from legion.backend import get_backend, Backend
+from legion.registry import PHYSICS, register
 from legion.embodiment import Embodiment
 
 from .base import PhysicsState, SensorData
 
 
+@register(PHYSICS, "mujoco")
 class MujocoPhysics:
     name = "mujoco"
 

@@ -1,6 +1,7 @@
 from typing import Protocol
 from numpy.typing import ArrayLike
 
+from legion.registry import OBSERVATIONS, register
 from legion.backend import Backend
 from legion.embodiment import Embodiment
 from legion.actuator import Actuator
@@ -27,6 +28,7 @@ class ObsTerm(Protocol):
     ) -> ArrayLike: ...
 
 
+@register(OBSERVATIONS, "prev_action")
 class PrevActionObs:
     name = "prev_action"
     required_signals = ("prev_action",)
@@ -41,6 +43,7 @@ class PrevActionObs:
         return prev_action
 
 
+@register(OBSERVATIONS, "velocity_command")
 class VelocityCommandObs:
     name = "velocity_command"
     required_signals = ("velocity_command",)

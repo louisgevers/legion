@@ -1,6 +1,7 @@
 from typing import Protocol
 from numpy.typing import ArrayLike
 
+from legion.registry import TERMINATIONS, register
 from legion.backend import Backend
 from legion.embodiment import Embodiment
 from legion.actuator import Actuator
@@ -26,6 +27,7 @@ class TerminationTerm(Protocol):
     ) -> bool: ...
 
 
+@register(TERMINATIONS, "fall")
 class FallTermination:
     name = "fall"
     required_signals = ()

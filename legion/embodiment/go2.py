@@ -1,6 +1,9 @@
 from typing import NamedTuple
 
+from legion.registry import EMBODIMENTS, register
 
+
+@register(EMBODIMENTS, "go2")
 class Go2(NamedTuple):
     name = "go2"
     n_joints = 12

@@ -1,6 +1,7 @@
 from typing import Protocol
 from numpy.typing import ArrayLike
 
+from legion.registry import SIGNALS, register
 from legion.backend import Backend
 from legion.embodiment import Embodiment
 from legion.actuator import Actuator
@@ -29,6 +30,7 @@ class Signal(Protocol):
     ) -> ArrayLike: ...
 
 
+@register(SIGNALS, "prev_action")
 class PreviousActionSignal:
 
     def __init__(
@@ -54,6 +56,7 @@ class PreviousActionSignal:
         return self.backend.array(action)
 
 
+@register(SIGNALS, "fixed_value")
 class FixedValuesSignal:
 
     def __init__(

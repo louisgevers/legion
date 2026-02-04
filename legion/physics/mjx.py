@@ -3,12 +3,14 @@ from mujoco import mjx
 from numpy.typing import ArrayLike
 
 from legion.backend import get_backend
+from legion.registry import PHYSICS, register
 from legion.embodiment import Embodiment
 
 from .base import PhysicsState, SensorData
 from .mujoco import mj_base_indices, mj_joint_indices, mj_actuator_indices
 
 
+@register(PHYSICS, "mjx")
 class MJXPhysics:
     name = "mjx"
 

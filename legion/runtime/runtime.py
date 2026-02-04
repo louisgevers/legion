@@ -1,6 +1,7 @@
 from typing import NamedTuple
 from numpy.typing import ArrayLike
 
+from legion.backend import Backend
 from legion.physics import PhysicsState, PhysicsEngine
 from legion.actuator import ActuatorState, Actuator
 from legion.task import TaskState, Task
@@ -25,6 +26,11 @@ class Runtime:
         self.physics = physics
         self.actuator = actuator
         self.task = task
+
+    # Useful hook for users
+    @property
+    def backend(self) -> Backend:
+        return self.physics.backend
 
     def reset(self) -> RuntimeState:
         return RuntimeState(

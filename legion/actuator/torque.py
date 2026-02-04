@@ -1,5 +1,6 @@
 from numpy.typing import ArrayLike
 
+from legion.registry import ACTUATORS, register
 from legion.backend import Backend
 from legion.embodiment import Embodiment
 from legion.physics import SensorData
@@ -7,6 +8,7 @@ from legion.physics import SensorData
 from .base import ActuatorState
 
 
+@register(ACTUATORS, "torque")
 class TorqueActuator:
     def __init__(
         self, backend: Backend, embodiment: Embodiment, gain: float | list[float]

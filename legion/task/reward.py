@@ -1,6 +1,7 @@
 from typing import Protocol
 from numpy.typing import ArrayLike
 
+from legion.registry import REWARDS, register
 from legion.backend import Backend
 from legion.embodiment import Embodiment
 from legion.actuator import Actuator
@@ -29,6 +30,7 @@ class RewardTerm(Protocol):
     ) -> float: ...
 
 
+@register(REWARDS, "velocity_tracking")
 class VelocityTrackingReward:
     name = "velocity_tracking"
     required_signals = ("velocity_command",)
@@ -57,6 +59,7 @@ class VelocityTrackingReward:
         return self.backend.exp(-(diff**2) / self.sensitivity)
 
 
+@register(REWARDS, "action_regularization")
 class ActionRegularizationReward:
     name = "action_regularization"
     required_signals = ("prev_action",)

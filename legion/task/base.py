@@ -119,7 +119,7 @@ class Task:
             for signal_name in term.required_signals:
                 if signal_name not in signal_index:
                     raise ValueError(
-                        f"Cannot construct task: {term_name} term '{term.name}' requires signal '{signal_name}'"
+                        f"Cannot construct task: {term_name} term '{term.name}' requires signal named '{signal_name}' (current signals: {[s.name for s in self.signal_defs]})"
                     )
 
             # Build indices
