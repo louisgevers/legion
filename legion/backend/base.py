@@ -1,4 +1,7 @@
 from typing import Protocol
+from numpy.typing import ArrayLike
+
+RNGKey = ArrayLike
 
 
 class Backend(Protocol):
@@ -20,3 +23,13 @@ class Backend(Protocol):
 
     # execution transforms
     def jit(self, fn, **kwargs): ...
+
+    # RNG
+    def rng_seed(self, seed: int) -> RNGKey: ...
+    def rng_split(self, key: RNGKey, num: int = 2) -> tuple[RNGKey, ...]: ...
+    def rng_uniform(
+        self, key: RNGKey, shape: tuple[int, ...], minval=0.0, maxval=1.0
+    ) -> ArrayLike: ...
+    def rng_normal(
+        self, key: RNGKey, shape: tuple[int, ...], mean=0.0, std=1.0
+    ) -> ArrayLike: ...

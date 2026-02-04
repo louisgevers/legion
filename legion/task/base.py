@@ -1,7 +1,7 @@
 from typing import NamedTuple
 from numpy.typing import ArrayLike
 
-from legion.backend import Backend
+from legion.backend import Backend, RNGKey
 from legion.physics import SensorData
 
 from .signals import Signal
@@ -44,16 +44,24 @@ class Task:
             signal_index, self.terminations, "Termination"
         )
 
-    def reset(self) -> TaskState:
-        signals = tuple(s.reset() for s in self.signal_defs)
+    def reset(self, rng: RNGKey) -> TaskState:
+        rng_signals = self.backend.rng_split(rng, len(self.signal_defs))
+        signals = tuple(s.reset(r) for s, r in zip(self.signal_defs, rng_signals))
         return TaskState(signals=signals)
 
     def step(
-        self, task_state: TaskState, sensor_data: SensorData, action: ArrayLike
+        self,
+        task_state: TaskState,
+        sensor_data: SensorData,
+        action: ArrayLike,
+        rng: RNGKey,
     ) -> TaskState:
+        rng_signals = self.backend.rng_split(rng, len(self.signal_defs))
         signals = tuple(
-            s.step(prev_signal, sensor_data, action)
-            for s, prev_signal in zip(self.signal_defs, task_state.signals)
+            s.step(prev_signal, sensor_data, action, r)
+            for s, prev_signal, r in zip(
+                self.signal_defs, task_state.signals, rng_signals
+            )
         )
         return TaskState(signals=signals)
 

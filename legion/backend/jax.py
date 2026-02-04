@@ -23,3 +23,20 @@ class JaxBackend:
     @staticmethod
     def jit(fn, **kwargs):
         return jax.jit(fn, **kwargs)
+
+    # RNG
+    @staticmethod
+    def rng_seed(seed: int):
+        return jax.random.PRNGKey(seed)
+
+    @staticmethod
+    def rng_split(key, num: int = 2):
+        return jax.random.split(key, num)
+
+    @staticmethod
+    def rng_uniform(key, shape, minval=0.0, maxval=1.0):
+        return jax.random.uniform(key, shape, minval=minval, maxval=maxval)
+
+    @staticmethod
+    def rng_normal(key, shape, mean=0.0, std=1.0):
+        return mean + std * jax.random.normal(key, shape)

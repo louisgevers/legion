@@ -1,7 +1,7 @@
 from typing import NamedTuple
 from numpy.typing import ArrayLike
 
-from legion.backend import Backend
+from legion.backend import Backend, RNGKey
 from legion.physics import PhysicsState, PhysicsEngine
 from legion.actuator import ActuatorState, Actuator
 from legion.task import TaskState, Task
@@ -11,6 +11,7 @@ class RuntimeState(NamedTuple):
     physics: PhysicsState
     actuator: ActuatorState
     task: TaskState
+    rng: RNGKey
 
 
 class RuntimeTransition(NamedTuple):
@@ -32,14 +33,19 @@ class Runtime:
     def backend(self) -> Backend:
         return self.physics.backend
 
-    def reset(self) -> RuntimeState:
+    def reset(self, rng: RNGKey) -> RuntimeState:
+        rng, task_rng = self.backend.rng_split(rng, num=2)
         return RuntimeState(
             physics=self.physics.reset(),
             actuator=self.actuator.reset(),
-            task=self.task.reset(),
+            task=self.task.reset(task_rng),
+            rng=rng,
         )
 
     def step(self, state: RuntimeState, action: ArrayLike) -> RuntimeTransition:
+        # Generate new keys
+        rng, task_rng = self.backend.rng_split(state.rng, num=2)
+
         # Read sensors (pre-action)
         sensor_data = self.physics.get_sensor_data(state.physics)
 
@@ -58,13 +64,14 @@ class Runtime:
 
         # Update actuator states and signals for next step (AFTER the transition)
         actuator_state = self.actuator.step(state.actuator)
-        task_state = self.task.step(state.task, sensor_data, action)
+        task_state = self.task.step(state.task, sensor_data, action, task_rng)
 
         return RuntimeTransition(
             state=RuntimeState(
                 physics=physics_state,
                 actuator=actuator_state,
                 task=task_state,
+                rng=rng,
             ),
             obs=obs,
             reward=reward,
