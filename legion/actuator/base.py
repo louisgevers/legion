@@ -16,6 +16,7 @@ class ActuatorOutput(NamedTuple):
 
 
 class Actuator(Protocol):
+    n_u: int
 
     def __init__(self, backend: Backend, embodiment: Embodiment, **kwargs): ...
 

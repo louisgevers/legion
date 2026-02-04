@@ -17,6 +17,7 @@ class PDActuator:
         gain: float | list[float],
     ):
         self.backend = backend
+        self.n_u = embodiment.n_actuators
         self.q_nominal = backend.array(embodiment.q_nominal)
         self.kp = backend.array(kp)
         self.kd = backend.array(kd)

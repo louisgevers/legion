@@ -12,6 +12,7 @@ class TorqueActuator:
         self, backend: Backend, embodiment: Embodiment, gain: float | list[float]
     ):
         self.backend = backend
+        self.n_u = embodiment.n_actuators
         self.gain = backend.array(gain)
 
     def reset(self) -> ActuatorState:

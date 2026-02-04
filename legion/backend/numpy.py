@@ -11,8 +11,12 @@ class NumpyBackend:
     concatenate = staticmethod(np.concatenate)
     clip = staticmethod(np.clip)
     norm = staticmethod(np.linalg.norm)
+    exp = staticmethod(np.exp)
     sin = staticmethod(np.sin)
     cos = staticmethod(np.cos)
+    sum = staticmethod(np.sum)
+    any = staticmethod(np.any)
+    all = staticmethod(np.all)
 
     # execution transforms
     @staticmethod

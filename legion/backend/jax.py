@@ -12,8 +12,12 @@ class JaxBackend:
     concatenate = staticmethod(jnp.concatenate)
     clip = staticmethod(jnp.clip)
     norm = staticmethod(jnp.linalg.norm)
+    exp = staticmethod(jnp.exp)
     sin = staticmethod(jnp.sin)
     cos = staticmethod(jnp.cos)
+    sum = staticmethod(jnp.sum)
+    any = staticmethod(jnp.any)
+    all = staticmethod(jnp.all)
 
     # execution transforms
     @staticmethod
