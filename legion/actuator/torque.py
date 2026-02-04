@@ -4,7 +4,7 @@ from legion.backend import Backend
 from legion.embodiment import Embodiment
 from legion.physics import SensorData
 
-from .base import ActuatorState, ActuatorOutput
+from .base import ActuatorState
 
 
 class TorqueActuator:
@@ -19,7 +19,11 @@ class TorqueActuator:
         # No state
         return ActuatorState()
 
+    def step(self, state: ActuatorState) -> ActuatorState:
+        # No state
+        return state
+
     def tau(
         self, u: ArrayLike, sensor_data: SensorData, state: ActuatorState
-    ) -> ActuatorOutput:
-        return ActuatorOutput(tau=u * self.gain, state=state)
+    ) -> ArrayLike:
+        return u * self.gain

@@ -10,20 +10,17 @@ class ActuatorState(NamedTuple):
     pass
 
 
-class ActuatorOutput(NamedTuple):
-    tau: ArrayLike
-    state: ActuatorState
-
-
 class Actuator(Protocol):
     n_u: int
 
     def __init__(self, backend: Backend, embodiment: Embodiment, **kwargs): ...
 
     def reset(self) -> ActuatorState: ...
+    def step(self, state: ActuatorState) -> ActuatorState: ...
+
     def tau(
         self,
         u: ArrayLike,
         sensor_data: SensorData,
         state: ActuatorState,
-    ) -> ActuatorOutput: ...
+    ) -> ArrayLike: ...

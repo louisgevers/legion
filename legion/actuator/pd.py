@@ -4,7 +4,7 @@ from legion.backend import Backend
 from legion.embodiment import Embodiment
 from legion.physics import SensorData
 
-from .base import ActuatorState, ActuatorOutput
+from .base import ActuatorState
 
 
 class PDActuator:
@@ -27,11 +27,12 @@ class PDActuator:
         # No state
         return ActuatorState()
 
+    def step(self, state: ActuatorState) -> ActuatorState:
+        # No state
+        return state
+
     def tau(
         self, u: ArrayLike, sensor_data: SensorData, state: ActuatorState
-    ) -> ActuatorOutput:
+    ) -> ArrayLike:
         qdes = self.q_nominal + self.gain * u
-        return ActuatorOutput(
-            tau=self.kp * (qdes - sensor_data.q) - self.kd * sensor_data.dq,
-            state=state,
-        )
+        return self.kp * (qdes - sensor_data.q) - self.kd * sensor_data.dq

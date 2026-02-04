@@ -1,1 +1,1 @@
-from .base import Actuator, ActuatorOutput, ActuatorState
+from .base import Actuator, ActuatorState
