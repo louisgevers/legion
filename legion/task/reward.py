@@ -55,8 +55,8 @@ class VelocityTrackingReward:
     ):
         cmd = signals[0]
         actual = sensor_data.base_xyz[:2]  # vx, vy
-        diff = self.backend.norm(actual - cmd)
-        return self.backend.exp(-(diff**2) / self.sensitivity)
+        error = self.backend.sum(self.backend.square(actual - cmd))
+        return self.backend.exp(-error / self.sensitivity)
 
 
 @register(REWARDS, "action_regularization")
@@ -81,4 +81,4 @@ class ActionRegularizationReward:
         action: ArrayLike,
     ):
         prev_action = signals[0]
-        return self.backend.norm(action - prev_action)
+        return self.backend.sum(self.backend.square(action - prev_action))

@@ -41,8 +41,14 @@ class HasNaNsTermination:
         self.backend = backend
 
     def __call__(self, signals: ArrayLike, sensor_data: SensorData):
-        return self.backend.any(
-            self.backend.isnan(sensor_data.q) | self.backend.isnan(sensor_data.dq)
+        return (
+            self.backend.any(
+                self.backend.isnan(sensor_data.q) | self.backend.isnan(sensor_data.dq)
+            )
+            | self.backend.any(self.backend.isnan(sensor_data.base_xyz))
+            | self.backend.any(self.backend.isnan(sensor_data.base_quat))
+            | self.backend.any(self.backend.isnan(sensor_data.base_linear_vel))
+            | self.backend.any(self.backend.isnan(sensor_data.base_angular_vel))
         )
 
 

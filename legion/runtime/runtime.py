@@ -62,6 +62,12 @@ class Runtime:
         reward = self.task.reward(state.task, sensor_data, action)
         done = self.task.terminate(state.task, sensor_data)
 
+        # If terminated early, set reward to 0
+        reward = self.backend.where(done, 0, reward)
+
+        # Clip negative rewards
+        reward = self.backend.clip(reward, min=0, max=None)
+
         # Update actuator states and signals for next step (AFTER the transition)
         actuator_state = self.actuator.step(state.actuator)
         task_state = self.task.step(state.task, sensor_data, action, task_rng)
