@@ -19,6 +19,7 @@ class NumpyBackend:
     sum = staticmethod(np.sum)
     any = staticmethod(np.any)
     all = staticmethod(np.all)
+    isnan = staticmethod(np.isnan)
 
     @staticmethod
     def quat2euler(xyzw):

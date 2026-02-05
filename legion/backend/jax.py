@@ -6,6 +6,10 @@ from jax.scipy.spatial.transform import Rotation
 class JaxBackend:
     name = "jax"
 
+    def __init__(self):
+        # Required for Ampere architectures (e.g., RTX30 and RTX40) or NaNs start showing up
+        jax.config.update("jax_default_matmul_precision", "highest")
+
     # array ops
     array = staticmethod(jnp.array)
     zeros = staticmethod(jnp.zeros)
@@ -20,6 +24,7 @@ class JaxBackend:
     sum = staticmethod(jnp.sum)
     any = staticmethod(jnp.any)
     all = staticmethod(jnp.all)
+    isnan = staticmethod(jnp.isnan)
 
     @staticmethod
     def quat2euler(xyzw):

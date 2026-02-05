@@ -27,6 +27,25 @@ class TerminationTerm(Protocol):
     ) -> bool: ...
 
 
+@register(TERMINATIONS, "has_nans")
+class HasNaNsTermination:
+    name = "has_nans"
+    required_signals = ()
+
+    def __init__(
+        self,
+        backend: Backend,
+        embodiment: Embodiment,
+        actuator: Actuator,
+    ):
+        self.backend = backend
+
+    def __call__(self, signals: ArrayLike, sensor_data: SensorData):
+        return self.backend.any(
+            self.backend.isnan(sensor_data.q) | self.backend.isnan(sensor_data.dq)
+        )
+
+
 @register(TERMINATIONS, "fall")
 class FallTermination:
     name = "fall"

@@ -12,7 +12,7 @@ license = { file = "LICENSE" }
 authors = [{ name = "Louis Gevers" }]
 
 # Common dependencies across all
-dependencies = ["numpy>=2.4.0", "PyYAML>=6.0", "tqdm>=4.0"]
+dependencies = ["numpy>=2.0.0", "PyYAML>=6.0", "tqdm>=4.0"]
 
 [project.optional-dependencies]
 # Simulator specific installs
@@ -22,7 +22,7 @@ mujoco-mjx = [
     "mujoco-mjx==3.4.0",
     "jax==0.8.2",
     # Install CUDA libraries only if not on MacOS
-    "jax[cuda12]; sys_platform != 'darwin'"
+    "jax[cuda12]; sys_platform != 'darwin'",
 ]
 
 [tool.setuptools]
