@@ -1,5 +1,6 @@
 import jax
 import jax.numpy as jnp
+from jax.scipy.spatial.transform import Rotation
 
 
 class JaxBackend:
@@ -10,6 +11,7 @@ class JaxBackend:
     zeros = staticmethod(jnp.zeros)
     ones = staticmethod(jnp.ones)
     concatenate = staticmethod(jnp.concatenate)
+    roll = staticmethod(jnp.roll)
     clip = staticmethod(jnp.clip)
     norm = staticmethod(jnp.linalg.norm)
     exp = staticmethod(jnp.exp)
@@ -18,6 +20,14 @@ class JaxBackend:
     sum = staticmethod(jnp.sum)
     any = staticmethod(jnp.any)
     all = staticmethod(jnp.all)
+
+    @staticmethod
+    def quat2euler(xyzw):
+        return Rotation.from_quat(xyzw).as_euler("xyz", degrees=False)
+
+    @staticmethod
+    def quat_rotate(xyzw, v, inverse: bool = False):
+        return Rotation.from_quat(xyzw).apply(v, inverse=inverse)
 
     # execution transforms
     @staticmethod
