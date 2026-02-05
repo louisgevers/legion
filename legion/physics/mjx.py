@@ -7,7 +7,12 @@ from legion.registry import PHYSICS, register
 from legion.embodiment import Embodiment
 
 from .base import PhysicsState, SensorData
-from .mujoco import mj_base_indices, mj_joint_indices, mj_actuator_indices
+from .mujoco import (
+    mj_base_indices,
+    mj_joint_indices,
+    mj_actuator_indices,
+    mj_foot_geom_ids,
+)
 
 
 @register(PHYSICS, "mjx")
@@ -35,6 +40,9 @@ class MJXPhysics:
             self._mj_model, embodiment, self.backend
         )
 
+        # Load foot geom ids for contact detection
+        self._foot_geom_ids = mj_foot_geom_ids(self._mj_model, embodiment, self.backend)
+
     def reset(self) -> PhysicsState:
         # Create blank data
         data = mjx.make_data(self._mj_model)
@@ -55,11 +63,32 @@ class MJXPhysics:
             dq=self.backend.array(state.data.qvel[self._joint_qvel_idx]),
             tau=self.backend.array(state.data.ctrl[self._actuator_idx]),
             base_xyz=self.backend.array(state.data.qpos[self._base_qpos_idx][:3]),
-            base_quat=self.backend.array(state.data.qpos[self._base_qpos_idx][3:]),
+            base_quat=self.backend.roll(
+                state.data.qpos[self._base_qpos_idx][3:], -1
+            ),  # Mujoco uses wxyz
             base_linear_vel=self.backend.array(
                 state.data.qvel[self._base_qvel_idx][:3]
             ),
             base_angular_vel=self.backend.array(
                 state.data.qvel[self._base_qvel_idx][3:]
             ),
+            foot_contacts=self._compute_foot_contacts(state),
         )
+
+    def _compute_foot_contacts(self, state: PhysicsState) -> ArrayLike:
+        # Only when distance is negative is there a contact
+        active_contacts = state.data.contact.dist < 0  # (233,)
+
+        # Get mask contacts that involve foot geoms
+        foot_contact_geoms = (
+            state.data.contact.geom[:, None, 0] == self._foot_geom_ids[None, :]
+        ) | (
+            state.data.contact.geom[:, None, 1] == self._foot_geom_ids[None, :]
+        )  # (233, n_feet)
+
+        # Collapse active contacts
+        foot_in_contact = self.backend.any(
+            active_contacts[:, None] & foot_contact_geoms, axis=0
+        )  # (n_feet,)
+
+        return foot_in_contact

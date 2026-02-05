@@ -30,6 +30,9 @@ class MujocoPhysics:
             self._mj_model, embodiment, self.backend
         )
 
+        # Load foot geom ids for contact detection
+        self._foot_geom_ids = mj_foot_geom_ids(self._mj_model, embodiment, self.backend)
+
     def reset(self) -> PhysicsState:
         # Create blank data
         data = mujoco.MjData(self._mj_model)
@@ -53,14 +56,27 @@ class MujocoPhysics:
             dq=self.backend.array(state.data.qvel[self._joint_qvel_idx]),
             tau=self.backend.array(state.data.ctrl[self._actuator_idx]),
             base_xyz=self.backend.array(state.data.qpos[self._base_qpos_idx][:3]),
-            base_quat=self.backend.array(state.data.qpos[self._base_qpos_idx][3:]),
+            base_quat=self.backend.roll(
+                state.data.qpos[self._base_qpos_idx][3:], -1
+            ),  # Mujoco uses wxyz
             base_linear_vel=self.backend.array(
                 state.data.qvel[self._base_qvel_idx][:3]
             ),
             base_angular_vel=self.backend.array(
                 state.data.qvel[self._base_qvel_idx][3:]
             ),
+            foot_contacts=self._compute_foot_contacts(state),
         )
+
+    def _compute_foot_contacts(self, state: PhysicsState) -> ArrayLike:
+        contact_bools = self.backend.zeros(4)
+        for i_con in range(state.data.ncon):
+            contact = state.data.contact[i_con]
+            for foot_i, foot_id in enumerate(self._foot_geom_ids):
+                if contact.geom1 == foot_id or contact.geom2 == foot_id:
+                    contact_bools[foot_i] = 1
+                    break
+        return contact_bools
 
 
 def mj_base_indices(
@@ -111,3 +127,10 @@ def mj_actuator_indices(
         actuator_idx.append(a.id)
 
     return backend.array(actuator_idx)
+
+
+def mj_foot_geom_ids(
+    mj_model: mujoco._MjBindModel, embodiment: Embodiment, backend: Backend
+) -> ArrayLike:
+    """Extract geom foot ids given the model and embodiment"""
+    return backend.array([mj_model.geom(foot).id for foot in embodiment.feet_names])

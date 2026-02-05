@@ -18,9 +18,11 @@ class SensorData(NamedTuple):
     tau: ArrayLike  # applied torques (n_actuators,)
 
     base_xyz: ArrayLike  # base position in world frame (3,)
-    base_quat: ArrayLike  # base orientation quaternion (4,)
+    base_quat: ArrayLike  # base orientation quaternion xyzw (4,)
     base_linear_vel: ArrayLike  # base linear velocity (3,)
     base_angular_vel: ArrayLike  # base angular velocity (3,)
+
+    foot_contacts: ArrayLike  # boolean foot contacts (n_feet,)
 
 
 class PhysicsEngine(Protocol):
