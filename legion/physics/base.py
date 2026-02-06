@@ -28,8 +28,9 @@ class SensorData(NamedTuple):
 class PhysicsEngine(Protocol):
     name: str
     backend: Backend
+    dt: float
 
-    def __init__(self, embodiment: Embodiment, **kwargs): ...
+    def __init__(self, embodiment: Embodiment, dt: float, **kwargs): ...
 
     # Simulation state functions
     def reset(self) -> PhysicsState: ...

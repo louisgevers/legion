@@ -19,12 +19,15 @@ from .mujoco import (
 class MJXPhysics:
     name = "mjx"
 
-    def __init__(self, embodiment: Embodiment, mjcf: str):
+    def __init__(self, embodiment: Embodiment, dt: float, mjcf: str):
         # Lazy load backend
         self.backend = get_backend("jax")
 
         # Load MJCF
         self._mj_model = mujoco.MjModel.from_xml_path(mjcf)
+
+        # Set timestep
+        self._mj_model.opt.timestep = dt
 
         # Create mjx model
         self._mjx_model = mjx.put_model(self._mj_model)
@@ -42,6 +45,10 @@ class MJXPhysics:
 
         # Load foot geom ids for contact detection
         self._foot_geom_ids = mj_foot_geom_ids(self._mj_model, embodiment, self.backend)
+
+    @property
+    def dt(self) -> float:
+        return self._mj_model.opt.timestep
 
     def reset(self) -> PhysicsState:
         # Create blank data

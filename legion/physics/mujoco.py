@@ -12,12 +12,15 @@ from .base import PhysicsState, SensorData
 class MujocoPhysics:
     name = "mujoco"
 
-    def __init__(self, embodiment: Embodiment, mjcf: str):
+    def __init__(self, embodiment: Embodiment, dt: float, mjcf: str):
         # Lazy load backend
         self.backend = get_backend("numpy")
 
         # Load MJCF
         self._mj_model = mujoco.MjModel.from_xml_path(mjcf)
+
+        # Set timestep
+        self._mj_model.opt.timestep = dt
 
         # Precompute joint indices
         self._base_qpos_idx, self._base_qvel_idx = mj_base_indices(
@@ -32,6 +35,10 @@ class MujocoPhysics:
 
         # Load foot geom ids for contact detection
         self._foot_geom_ids = mj_foot_geom_ids(self._mj_model, embodiment, self.backend)
+
+    @property
+    def dt(self) -> float:
+        return self._mj_model.opt.timestep
 
     def reset(self) -> PhysicsState:
         # Create blank data
