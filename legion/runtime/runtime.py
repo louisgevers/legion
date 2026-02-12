@@ -104,6 +104,12 @@ class Runtime:
             done=done,
         )
 
+    def observe(self, state: RuntimeState) -> ArrayLike:
+        """Convenience function for current observations (e.g., after a reset)"""
+        sensor_data = self.physics.get_sensor_data(state.physics)
+        obs = self.task.observe(state.task, sensor_data)
+        return obs
+
     # --- scannable functions --
     def _physics_step_fn(
         self, carry: tuple[PhysicsState, ArrayLike], _
