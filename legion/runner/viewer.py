@@ -1,10 +1,9 @@
 import time
 import datetime
 import tqdm
-from typing import Callable
-from numpy.typing import ArrayLike
 
 from legion.backend import RNGKey
+from legion.policy import Policy
 from legion.runtime import Runtime
 from legion.viewer import make_viewer
 
@@ -13,7 +12,7 @@ class ViewerRunner:
     def run(
         self,
         runtime: Runtime,
-        policy: Callable[[RNGKey, ArrayLike], ArrayLike],
+        policy: Policy,
         rng: RNGKey,
     ):
         # Create viewer
@@ -49,7 +48,7 @@ class ViewerRunner:
         while viewer.is_running():
             # Step
             rng, key = runtime.backend.rng_split(rng)
-            u = policy(key, obs)
+            u = policy.action(obs, key)
             state, obs, _, _ = jit_step(state, u)
 
             # Sync viewer

@@ -1,9 +1,10 @@
 from pathlib import Path
 from argparse import ArgumentParser, Namespace
 
-from legion.runner.viewer import ViewerRunner
 from legion.runtime import make_runtime
 from legion.utils import ConfigUtil
+from legion.runner.viewer import ViewerRunner
+from legion.policy.random import RandomUniformPolicy
 
 
 CONFIGS_DIR = (Path(__file__).parent.parent / "configs").resolve(True)
@@ -18,11 +19,8 @@ def run_viewer(cfg_name: str, action_scaling: float):
     runtime = make_runtime(cfg)
 
     # Create a random policy
-    random_policy = (
-        lambda rng, obs: runtime.backend.rng_uniform(
-            rng, runtime.actuator.n_u, minval=-1.0, maxval=1.0
-        )
-        * action_scaling
+    random_policy = RandomUniformPolicy(
+        runtime.backend, runtime.actuator.n_u, action_scaling
     )
 
     # Create RNG key
