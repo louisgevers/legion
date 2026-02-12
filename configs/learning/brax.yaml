@@ -1,0 +1,27 @@
+runner:
+  type: "brax"
+  learning_iterations: 1000
+  n_envs: 4096
+  rollout_length: 24
+
+algorithm:
+  type: ppo
+  # Training
+  learning_rate: 0.001
+  learning_rate_schedule: adaptive_kl
+  n_learning_epochs: 5
+  n_mini_batches: 4
+  # Value function
+  vf_loss_coefficient: 0.5
+  clip_range: 0.2
+  normalize_advantage: True
+  # Surrogate loss
+  entropy_coef: 0.01
+  desired_kl: 0.01
+  discount_factor: 0.99
+  gae_lambda: 0.95
+  max_grad_norm: 0.5
+  # Networks
+  layers: [256, 256, 128]
+  activation: elu
+  normalize_observations: False

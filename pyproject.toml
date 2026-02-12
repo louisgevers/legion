@@ -21,6 +21,7 @@ mujoco-mjx = [
     "mujoco==3.4.0",
     "mujoco-mjx==3.4.0",
     "jax==0.8.2",
+    "brax==0.14.0",
     # Install CUDA libraries only if not on MacOS
     "jax[cuda12]; sys_platform != 'darwin'",
 ]
