@@ -36,6 +36,17 @@ class NumpyBackend:
     def jit(fn, **kwargs):
         return fn  # no-op
 
+    @staticmethod
+    def scan(fn, init, xs, length):
+        if xs is None:
+            xs = [None] * length
+        carry = init
+        ys = []
+        for x in xs:
+            carry, y = fn(carry, x)
+            ys.append(y)
+        return carry, np.stack(ys)
+
     # RNG
     @staticmethod
     def rng_seed(seed: int):

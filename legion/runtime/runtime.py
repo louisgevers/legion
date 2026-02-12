@@ -23,10 +23,31 @@ class RuntimeTransition(NamedTuple):
 
 class Runtime:
 
-    def __init__(self, physics: PhysicsEngine, actuator: Actuator, task: Task):
+    def __init__(
+        self,
+        physics: PhysicsEngine,
+        actuator: Actuator,
+        task: Task,
+        actuator_hz: float,
+        policy_hz: float,
+    ):
         self.physics = physics
         self.actuator = actuator
         self.task = task
+
+        # Compute static decimations for different control loop frequencies
+        physics_hz = int(round(1.0 / physics.dt))
+        assert (
+            physics_hz % actuator_hz == 0
+        ), f"Physics frequency ({physics_hz} Hz) must be a multiple of actuator frequency ({actuator_hz} Hz)"
+        assert (
+            physics_hz % policy_hz == 0
+        ), f"Physics frequency ({physics_hz} Hz) must be a multiple of policy frequency ({policy_hz} Hz)"
+        assert (
+            actuator_hz % policy_hz == 0
+        ), f"Actuator frequency ({actuator_hz} Hz) must be a multiple of policy frequency ({policy_hz} Hz)"
+        self._actuator_decimation = physics_hz // actuator_hz
+        self._policy_decimation = physics_hz // policy_hz
 
     # Useful hook for users
     @property
@@ -46,15 +67,15 @@ class Runtime:
         # Generate new keys
         rng, task_rng = self.backend.rng_split(state.rng, num=2)
 
-        # Read sensors (pre-action)
-        sensor_data = self.physics.get_sensor_data(state.physics)
+        # Apply action (steps actuator and physics at different frequencies, collects final states)
+        physics_state, actuator_state = self._step_action(
+            state.physics,
+            state.actuator,
+            action,
+            n=self._policy_decimation,  # Runs physics for policy_decimation steps
+        )
 
-        # Apply action
-        tau = self.actuator.tau(action, sensor_data, state.actuator)
-        physics_state = self.physics.apply_torques(state.physics, tau)
-        physics_state = self.physics.step(physics_state)
-
-        # Read sensors (post-action)
+        # Read sensors
         sensor_data = self.physics.get_sensor_data(physics_state)
 
         # Compute transition components
@@ -68,8 +89,7 @@ class Runtime:
         # Clip negative rewards
         reward = self.backend.clip(reward, min=0, max=None)
 
-        # Update actuator states and signals for next step (AFTER the transition)
-        actuator_state = self.actuator.step(state.actuator)
+        # Update signals for next step (AFTER the transition)
         task_state = self.task.step(state.task, sensor_data, action, task_rng)
 
         return RuntimeTransition(
@@ -83,3 +103,61 @@ class Runtime:
             reward=reward,
             done=done,
         )
+
+    # --- scannable functions --
+    def _physics_step_fn(
+        self, carry: tuple[PhysicsState, ArrayLike], _
+    ) -> tuple[tuple[PhysicsState, ArrayLike], None]:
+        physics_state, tau = carry
+
+        # Apply torques and step the simulation one step
+        physics_state = self.physics.apply_torques(physics_state, tau)
+        physics_state = self.physics.step(physics_state)
+
+        return (physics_state, tau), None
+
+    def _actuator_step_fn(
+        self, carry: tuple[PhysicsState, ActuatorState, ArrayLike], _
+    ) -> tuple[tuple[PhysicsState, ActuatorState, ArrayLike], None]:
+        physics_state, actuator_state, action = carry
+
+        # Collect sensor data and compute torques
+        sensor_data = self.physics.get_sensor_data(physics_state)
+        tau = self.actuator.tau(action, sensor_data, actuator_state)
+
+        # Advance simulation at actuator frequency
+        physics_state = self._step_physics(
+            physics_state, tau, n=self._actuator_decimation
+        )
+
+        # Step the actuator
+        actuator_state = self.actuator.step(actuator_state)
+
+        return (physics_state, actuator_state, action), None
+
+    def _step_physics(
+        self, physics_state: PhysicsState, tau: ArrayLike, n: int
+    ) -> PhysicsState:
+        (physics_state, _), _ = self.backend.scan(
+            self._physics_step_fn,
+            (physics_state, tau),
+            None,
+            length=n,
+        )
+        return physics_state
+
+    def _step_action(
+        self,
+        physics_state: PhysicsState,
+        actuator_state: ActuatorState,
+        action: ArrayLike,
+        n: int,
+    ) -> tuple[PhysicsState, ActuatorState]:
+        (physics_state, actuator_state, _), _ = self.backend.scan(
+            self._actuator_step_fn,
+            (physics_state, actuator_state, action),
+            None,
+            length=n
+            // self._actuator_decimation,  # Internally runs actuator_decimation times
+        )
+        return physics_state, actuator_state

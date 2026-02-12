@@ -41,6 +41,10 @@ class JaxBackend:
     def jit(fn, **kwargs):
         return jax.jit(fn, **kwargs)
 
+    @staticmethod
+    def scan(fn, init, xs, length):
+        return jax.lax.scan(fn, init, xs, length)
+
     # RNG
     @staticmethod
     def rng_seed(seed: int):
