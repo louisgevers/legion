@@ -10,3 +10,4 @@ class Embodiment(Protocol):
     actuator_names: tuple[str, ...]
     feet_names: tuple[str, ...]
     q_nominal: tuple[float, ...]
+    base_xyz_init: tuple[float, float, float]

@@ -25,3 +25,4 @@ class Go2(NamedTuple):
     )
     feet_names = ("FL", "FR", "RL", "RR")
     q_nominal = tuple([0.0, 0.9, -1.8] * 4)
+    base_xyz_init = (0.0, 0.0, 0.34)

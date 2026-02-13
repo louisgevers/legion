@@ -50,10 +50,22 @@ class MJXPhysics:
     def dt(self) -> float:
         return self._mj_model.opt.timestep
 
-    def reset(self) -> PhysicsState:
+    def reset(self, q: ArrayLike, base_xyz: ArrayLike) -> PhysicsState:
         # Create blank data
         data = mjx.make_data(self._mj_model)
+
+        # Apply initial q positions
+        qpos = data.qpos.at[self._joint_qpos_idx].set(q)
+
+        # Apply initial base positions
+        qpos = qpos.at[self._base_qpos_idx[:3]].set(base_xyz)
+
+        # Replace qpos in data
+        data = data.replace(qpos=qpos)
+
+        # Forward dynamics
         data = mjx.forward(self._mjx_model, data)
+
         return PhysicsState(data=data)
 
     def step(self, state: PhysicsState) -> PhysicsState:

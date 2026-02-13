@@ -47,8 +47,8 @@ def make_runtime(cfg: dict) -> Runtime:
     task = Task(backend, signals, obs, rew, ter)
 
     # Build runtime
-    # - depends on physics, actuator, and task
-    return Runtime(physics, actuator, task, **cfg["runtime"])
+    # - depends on embodiment, physics, actuator, and task
+    return Runtime(embodiment, physics, actuator, task, **cfg["runtime"])
 
 
 def _build_terms(terms: list[dict], registry: dict, backend, embodiment, actuator):

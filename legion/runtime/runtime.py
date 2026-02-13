@@ -2,6 +2,7 @@ from typing import NamedTuple
 from numpy.typing import ArrayLike
 
 from legion.backend import Backend, RNGKey
+from legion.embodiment import Embodiment
 from legion.physics import PhysicsState, PhysicsEngine
 from legion.actuator import ActuatorState, Actuator
 from legion.task import TaskState, Task
@@ -25,12 +26,14 @@ class Runtime:
 
     def __init__(
         self,
+        embodiment: Embodiment,
         physics: PhysicsEngine,
         actuator: Actuator,
         task: Task,
         actuator_hz: float,
         policy_hz: float,
     ):
+        self.embodiment = embodiment
         self.physics = physics
         self.actuator = actuator
         self.task = task
@@ -56,8 +59,13 @@ class Runtime:
 
     def reset(self, rng: RNGKey) -> RuntimeState:
         rng, task_rng = self.backend.rng_split(rng, num=2)
+
+        # Initial robot state
+        q_init = self.backend.array(self.embodiment.q_nominal)
+        base_xyz_init = self.backend.array(self.embodiment.base_xyz_init)
+
         return RuntimeState(
-            physics=self.physics.reset(),
+            physics=self.physics.reset(q=q_init, base_xyz=base_xyz_init),
             actuator=self.actuator.reset(),
             task=self.task.reset(task_rng),
             rng=rng,

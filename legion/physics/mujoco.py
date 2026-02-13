@@ -40,10 +40,21 @@ class MujocoPhysics:
     def dt(self) -> float:
         return self._mj_model.opt.timestep
 
-    def reset(self) -> PhysicsState:
+    def reset(
+        self,
+        q: ArrayLike,
+        base_xyz: ArrayLike,
+    ) -> PhysicsState:
         # Create blank data
         data = mujoco.MjData(self._mj_model)
         mujoco.mj_resetData(self._mj_model, data)
+
+        # Apply initial q positions
+        data.qpos[self._joint_qpos_idx] = q
+
+        # Apply initial base positions
+        data.qpos[self._base_qpos_idx[:3]] = base_xyz
+
         return PhysicsState(data=data)
 
     def step(self, state: PhysicsState) -> PhysicsState:
