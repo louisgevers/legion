@@ -2,6 +2,7 @@ import jax
 import time
 import datetime
 import functools
+from tqdm import tqdm
 from flax import linen
 from copy import deepcopy
 
@@ -10,6 +11,7 @@ from brax.training.agents.ppo import train as ppo
 
 from legion.policy import Policy
 from legion.runtime import Runtime
+from legion.logger import Logger
 
 from .base import LearningRunner
 
@@ -75,9 +77,9 @@ class _BraxPolicy:
 
 class BraxLearningRunner(LearningRunner):
 
-    def learn_impl(self, runtime: Runtime, algo_cfg: dict) -> Policy:
+    def learn_impl(self, runtime: Runtime, algo_cfg: dict, logger: Logger) -> Policy:
         # Create training function
-        learn_fn = self._create_learn_fn(algo_cfg)
+        learn_fn = self._create_learn_fn(algo_cfg, logger)
 
         # Wrap the runtime
         env = _BraxEnv(runtime)
@@ -94,22 +96,24 @@ class BraxLearningRunner(LearningRunner):
         # Return as policy
         return _BraxPolicy(inference_fn)
 
-    def _create_learn_fn(self, algo_cfg: dict):
+    def _create_learn_fn(self, algo_cfg: dict, logger: Logger):
         # Edit a copy
         algo_cfg = deepcopy(algo_cfg)
 
         # Get algorithm type
         algo_type = algo_cfg.pop("type")
 
-        # TODO: use a logger interface for proper logging
-        def progress_fn(num_steps, metrics):
-            if "episode/sum_reward" in metrics:
-                jax.debug.print(
-                    f"\r({int(num_steps / self.batch_size)}/{self.learning_iterations}) {num_steps:_}: mean episode"
-                    f" reward={metrics['episode/sum_reward']:.3f}"
-                )
-            else:
-                jax.debug.print("\rstep: {step}", step=num_steps)
+        # Create a progress bar
+        pbar = tqdm(total=self.learning_iterations)
+
+        # Create progress function called at each training iteration
+        def progress_fn(num_steps: int, metrics: dict[str, float]):
+            logger.log_metrics(num_steps, metrics)
+
+            # Update progress bar
+            iteration = int(num_steps / self.batch_size)
+            pbar.n = iteration
+            pbar.refresh()
 
         if algo_type == "ppo":
             return functools.partial(

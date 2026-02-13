@@ -1,11 +1,12 @@
 from pathlib import Path
 from argparse import ArgumentParser, Namespace
+from datetime import datetime
 
 from legion.runtime import make_runtime
 from legion.runner.learning import make_learning_runner
 from legion.utils import ConfigUtil
 from legion.runner.viewer import ViewerRunner
-from legion.policy.random import RandomUniformPolicy
+from legion.logger.tensorboard import TensorboardLogger
 
 
 CONFIGS_DIR = (Path(__file__).parent.parent / "configs").resolve(True)
@@ -26,8 +27,17 @@ def run_learning(cfg_runtime: str, cfg_learning: str):
     # Create runner
     runner = make_learning_runner(cfg_learning)
 
+    # Create logger (with timestamped log directory)
+    log_dir = (
+        Path(__file__).parent / "runs" / datetime.now().strftime("%y-%m-%d_%H-%M-%S")
+    )
+    logger = TensorboardLogger(log_dir)
+
     # Start learning
-    policy = runner.learn(runtime, algo_cfg=cfg_learning["algorithm"])
+    policy = runner.learn(runtime, algo_cfg=cfg_learning["algorithm"], logger=logger)
+
+    # Close the logger after learning
+    logger.close()
 
     # Wait for user intervention before visualizing the policy
     input("Press anything to continue!")
