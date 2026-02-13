@@ -24,4 +24,4 @@ algorithm:
   # Networks
   layers: [256, 256, 128]
   activation: elu
-  normalize_observations: False
+  normalize_observations: True

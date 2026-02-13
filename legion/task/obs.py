@@ -66,11 +66,12 @@ class JointPositionsObs:
 
     def __init__(self, backend: Backend, embodiment: Embodiment, actuator: Actuator):
         self.size = embodiment.n_joints
+        self.q_nominal = backend.array(embodiment.q_nominal)
 
     def __call__(
         self, signals: tuple[ArrayLike, ...], sensor_data: SensorData
     ) -> ArrayLike:
-        return sensor_data.q
+        return sensor_data.q - self.q_nominal
 
 
 @register(OBSERVATIONS, "dq")
