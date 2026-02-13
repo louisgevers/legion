@@ -40,10 +40,10 @@ observations:
 
 rewards:
   - type: velocity_tracking
-    weight: 0.01
+    weight: 1.0
     sensitivity: 0.25
   - type: action_regularization
-    weight: -0.0005
+    weight: -0.004
 
 terminations:
   - type: has_nans

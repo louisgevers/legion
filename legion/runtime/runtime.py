@@ -52,6 +52,9 @@ class Runtime:
         self._actuator_decimation = physics_hz // actuator_hz
         self._policy_decimation = physics_hz // policy_hz
 
+        # Policy timestep for scaling
+        self._policy_dt = 1 / policy_hz
+
     # Useful hook for users
     @property
     def backend(self) -> Backend:
@@ -90,6 +93,9 @@ class Runtime:
         obs = self.task.observe(state.task, sensor_data)
         reward = self.task.reward(state.task, sensor_data, action)
         done = self.task.terminate(state.task, sensor_data)
+
+        # Scale reward with timestep
+        reward = reward * self._policy_dt
 
         # If terminated early, set reward to 0
         reward = self.backend.where(done, 0, reward)
