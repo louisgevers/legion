@@ -45,11 +45,28 @@ class ViewerRunner:
 
         # Simulation loop
         start_time = time.perf_counter()
+        ep_reward = 0
+        ep_length = 0
         while viewer.is_running():
             # Step
             rng, key = runtime.backend.rng_split(rng)
             u = policy.action(obs, key)
-            state, obs, _, _ = jit_step(state, u)
+            state, obs, reward, done = jit_step(state, u)
+
+            # Track stats
+            ep_reward += reward
+            ep_length += 1
+
+            # Reset if done (FIXME: could be sped up for GPU cases)
+            if runtime.backend.any(done):
+                print(f"Episode reward: {ep_reward:.2f} (length={ep_length})")
+                ep_reward = 0
+                ep_length = 0
+                start_time = time.perf_counter()
+
+                rng, key = runtime.backend.rng_split(rng)
+                state = jit_reset(key)
+                obs = jit_observe(state)
 
             # Sync viewer
             viewer.render(state.physics)
