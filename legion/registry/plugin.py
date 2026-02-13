@@ -9,6 +9,7 @@ def load_all():
     # Actuators
     import legion.actuator.torque
     import legion.actuator.pd
+    import legion.actuator.ekeberg
 
     # Tasks
     import legion.task.signals
