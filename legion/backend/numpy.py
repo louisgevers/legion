@@ -19,6 +19,7 @@ class NumpyBackend:
     cos = staticmethod(np.cos)
     sum = staticmethod(np.sum)
     square = staticmethod(np.square)
+    abs = staticmethod(np.abs)
     any = staticmethod(np.any)
     all = staticmethod(np.all)
     isnan = staticmethod(np.isnan)

@@ -1,3 +1,4 @@
+import os
 import jax
 import jax.numpy as jnp
 from jax.scipy.spatial.transform import Rotation
@@ -24,6 +25,7 @@ class JaxBackend:
     cos = staticmethod(jnp.cos)
     sum = staticmethod(jnp.sum)
     square = staticmethod(jnp.square)
+    abs = staticmethod(jnp.abs)
     any = staticmethod(jnp.any)
     all = staticmethod(jnp.all)
     isnan = staticmethod(jnp.isnan)

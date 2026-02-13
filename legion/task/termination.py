@@ -63,8 +63,16 @@ class FallTermination:
         embodiment: Embodiment,
         actuator: Actuator,
         min_height: float,
+        max_angle: float,
     ):
+        self.backend = backend
         self.height = min_height
+        self.max_angle = max_angle
 
     def __call__(self, signals: ArrayLike, sensor_data: SensorData):
-        return sensor_data.base_xyz[2] < self.height
+        roll, pitch, _ = self.backend.quat2euler(sensor_data.base_quat)
+        return (
+            (sensor_data.base_xyz[2] < self.height)
+            | (self.backend.abs(roll) > self.max_angle)
+            | (self.backend.abs(pitch) > self.max_angle)
+        )

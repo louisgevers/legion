@@ -4,11 +4,11 @@ embodiment:
 physics:
   type: mujoco
   mjcf: assets/mujoco/go2.mjcf
-  dt: 0.004
+  dt: 0.005
 
 runtime:
-  actuator_hz: 250
-  policy_hz: 50
+  actuator_hz: 200
+  policy_hz: 100
 
 actuator:
   type: pd
@@ -40,12 +40,13 @@ observations:
 
 rewards:
   - type: velocity_tracking
-    weight: 0.02
+    weight: 0.01
     sensitivity: 0.25
   - type: action_regularization
-    weight: -0.00004
+    weight: -0.0005
 
 terminations:
   - type: has_nans
   - type: fall
     min_height: 0.1
+    max_angle: 1.57
