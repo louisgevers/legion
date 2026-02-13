@@ -54,7 +54,7 @@ class VelocityTrackingReward:
         action: ArrayLike,
     ):
         cmd = signals[0]
-        actual = sensor_data.base_xyz[:2]  # vx, vy
+        actual = sensor_data.base_linear_vel[:2]  # vx, vy
         error = self.backend.sum(self.backend.square(actual - cmd))
         return self.backend.exp(-error / self.sensitivity)
 
