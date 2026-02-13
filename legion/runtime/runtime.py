@@ -20,6 +20,7 @@ class RuntimeTransition(NamedTuple):
     obs: ArrayLike
     reward: ArrayLike
     done: ArrayLike
+    metrics: dict[str, ArrayLike]
 
 
 class Runtime:
@@ -91,11 +92,12 @@ class Runtime:
 
         # Compute transition components
         obs = self.task.observe(state.task, sensor_data)
-        reward = self.task.reward(state.task, sensor_data, action)
+        reward, metrics_reward = self.task.reward(state.task, sensor_data, action)
         done = self.task.terminate(state.task, sensor_data)
 
         # Scale reward with timestep
         reward = reward * self._policy_dt
+        metrics_reward = {k: v * self._policy_dt for k, v in metrics_reward.items()}
 
         # If terminated early, set reward to 0
         reward = self.backend.where(done, 0, reward)
@@ -116,6 +118,7 @@ class Runtime:
             obs=obs,
             reward=reward,
             done=done,
+            metrics=metrics_reward,
         )
 
     def observe(self, state: RuntimeState) -> ArrayLike:

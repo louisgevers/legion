@@ -44,6 +44,13 @@ class Task:
             signal_index, self.terminations, "Termination"
         )
 
+        # Build metric keys
+        self._rew_metric_names = tuple(f"reward/{rew.name}" for rew in self.rewards)
+
+    @property
+    def metric_names_rewards(self) -> tuple[str, ...]:
+        return self._rew_metric_names
+
     def reset(self, rng: RNGKey) -> TaskState:
         rng_signals = self.backend.rng_split(rng, len(self.signal_defs))
         signals = tuple(s.reset(r) for s, r in zip(self.signal_defs, rng_signals))
@@ -79,7 +86,7 @@ class Task:
 
     def reward(
         self, task_state: TaskState, sensor_data: SensorData, action: ArrayLike
-    ) -> ArrayLike:
+    ) -> tuple[ArrayLike, dict[str, ArrayLike]]:
         signals = tuple(
             # For each reward, collect the list of signals
             tuple(task_state.signals[i] for i in idx)
@@ -98,7 +105,11 @@ class Task:
             [rew.weight * value for rew, value in zip(self.rewards, rewards)]
         )
         # Sum weighted rewards together
-        return self.backend.sum(weighted_rewards)
+        total = self.backend.sum(weighted_rewards)
+        # Put individual reward terms in metrics
+        metrics_reward = dict(zip(self._rew_metric_names, weighted_rewards))
+
+        return total, metrics_reward
 
     def terminate(self, task_state: TaskState, sensor_data: SensorData) -> ArrayLike:
         signals = tuple(

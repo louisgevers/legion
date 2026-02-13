@@ -51,7 +51,7 @@ class ViewerRunner:
             # Step
             rng, key = runtime.backend.rng_split(rng)
             u = policy.action(obs, key)
-            state, obs, reward, done = jit_step(state, u)
+            state, obs, reward, done, metrics = jit_step(state, u)
 
             # Track stats
             ep_reward += reward

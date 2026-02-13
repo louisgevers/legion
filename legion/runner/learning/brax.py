@@ -35,11 +35,18 @@ class _BraxEnv:
         # Initial reward and termination
         reward, done = self.runtime.backend.zeros(2)
 
+        # Initial empty metrics
+        metrics = {
+            metric: self.runtime.backend.zeros(())
+            for metric in self.runtime.task.metric_names_rewards
+        }
+
         return BraxState(
             pipeline_state=state,
             obs=obs,
             reward=reward,
             done=done,
+            metrics=metrics,
         )
 
     def step(self, state: BraxState, action: jax.Array) -> BraxState:
@@ -49,6 +56,7 @@ class _BraxEnv:
             obs=transition.obs,
             reward=transition.reward,
             done=transition.done.astype("float32"),  # Brax expects float32s
+            metrics=transition.metrics,
         )
 
     @property
@@ -108,10 +116,12 @@ class BraxLearningRunner(LearningRunner):
 
         # Create progress function called at each training iteration
         def progress_fn(num_steps: int, metrics: dict[str, float]):
-            logger.log_metrics(num_steps, metrics)
+            iteration = int(num_steps / self.batch_size)
+
+            # Log metrics
+            logger.log_metrics(iteration, metrics)
 
             # Update progress bar
-            iteration = int(num_steps / self.batch_size)
             pbar.n = iteration
             pbar.refresh()
 
