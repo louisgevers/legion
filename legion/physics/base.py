@@ -24,6 +24,12 @@ class SensorData(NamedTuple):
 
     foot_contacts: ArrayLike  # boolean foot contacts (n_feet,)
 
+    def local_base_linear_vel(self, backend: Backend) -> ArrayLike:
+        return backend.quat_rotate(self.base_quat, self.base_linear_vel, inverse=True)
+
+    def local_base_angular_vel(self, backend: Backend) -> ArrayLike:
+        return backend.quat_rotate(self.base_quat, self.base_angular_vel, inverse=True)
+
 
 class PhysicsEngine(Protocol):
     name: str

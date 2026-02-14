@@ -114,12 +114,13 @@ class BaseLinearVelocityObs:
     required_signals = ()
 
     def __init__(self, backend: Backend, embodiment: Embodiment, actuator: Actuator):
+        self.backend = backend
         self.size = 3
 
     def __call__(
         self, signals: tuple[ArrayLike, ...], sensor_data: SensorData
     ) -> ArrayLike:
-        return sensor_data.base_linear_vel
+        return sensor_data.local_base_linear_vel(self.backend)
 
 
 @register(OBSERVATIONS, "base_angular_vel")
@@ -128,12 +129,13 @@ class BaseAngularVelocityObs:
     required_signals = ()
 
     def __init__(self, backend: Backend, embodiment: Embodiment, actuator: Actuator):
+        self.backend = backend
         self.size = 3
 
     def __call__(
         self, signals: tuple[ArrayLike, ...], sensor_data: SensorData
     ) -> ArrayLike:
-        return sensor_data.base_angular_vel
+        return sensor_data.local_base_angular_vel(self.backend)
 
 
 @register(OBSERVATIONS, "foot_contacts")
