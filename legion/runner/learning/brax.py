@@ -8,8 +8,11 @@ from copy import deepcopy
 
 from brax.envs.base import State as BraxState
 from brax.training.agents.ppo import train as ppo
+from brax.training.agents.ppo import networks as ppo_networks
+from brax.training.acme import running_statistics
+from brax.training.types import Params
 
-from legion.policy import Policy
+from legion.policy import Policy, register_policy
 from legion.runtime import Runtime
 from legion.logger import Logger
 
@@ -62,7 +65,7 @@ class _BraxEnv:
     @property
     def observation_size(self) -> int:
         return self.runtime.backend.sum(
-            [o.size for o in self.runtime.task.observations]
+            self.runtime.backend.array([o.size for o in self.runtime.task.observations])
         )
 
     @property
@@ -74,13 +77,49 @@ class _BraxEnv:
         return self
 
 
-class _BraxPolicy:
-    def __init__(self, inference_fn):
-        self.inference_fn = jax.jit(inference_fn)
+@register_policy("brax")
+class BraxPolicy(Policy):
+    def __init__(self, algo_cfg: dict, params: Params, obs_size: int, n_u: int):
+        # Save configs (legion) and params (brax) for optional saving to file
+        self.algo_cfg = algo_cfg
+        self.obs_size = obs_size
+        self.n_u = n_u
+        self.params = params
+
+        # NOTE: Currently we only support PPO
+        if algo_cfg["type"] != "ppo":
+            raise ValueError(
+                f"BraxPolicy only supports 'ppo' for inference networks, not '{algo_cfg['type']}'"
+            )
+
+        # Build the PPO networks
+        network_factory = _create_brax_network_factory(algo_cfg)
+        extra_kwargs = (
+            {"preprocess_observations_fn": running_statistics.normalize}
+            if algo_cfg["normalize_observations"]
+            else {}
+        )  # Need to manually add this outside of training
+        ppo_network = network_factory(obs_size, n_u, **extra_kwargs)
+
+        # Create a jitted brax inference function as policy
+        make_inference_fn = ppo_networks.make_inference_fn(ppo_network)
+        self.inference_fn = jax.jit(make_inference_fn(params))
 
     def action(self, obs: jax.Array, rng: jax.Array) -> jax.Array:
         u, _ = self.inference_fn(obs, rng)
         return u
+
+    def save_dict(self) -> dict:
+        return {
+            "algo_cfg": self.algo_cfg,
+            "params": self.params,
+            "obs_size": self.obs_size,
+            "n_u": self.n_u,
+        }
+
+    @classmethod
+    def load_from_dict(cls, data: dict) -> "BraxPolicy":
+        return cls(data["algo_cfg"], data["params"], data["obs_size"], data["n_u"])
 
 
 class BraxLearningRunner(LearningRunner):
@@ -98,18 +137,15 @@ class BraxLearningRunner(LearningRunner):
         duration = time.perf_counter() - start_time
         print(f"Learning duration: {datetime.timedelta(seconds=duration)}")
 
-        # Create inference function
-        inference_fn = jax.jit(make_inference_fn(params))
-
-        # Return as policy
-        return _BraxPolicy(inference_fn)
+        # Create policy
+        return BraxPolicy(algo_cfg, params, env.observation_size, env.action_size)
 
     def _create_learn_fn(self, algo_cfg: dict, logger: Logger):
         # Edit a copy
         algo_cfg = deepcopy(algo_cfg)
 
         # Get algorithm type
-        algo_type = algo_cfg.pop("type")
+        algo_type = algo_cfg["type"]
 
         # Create a progress bar
         pbar = tqdm(total=self.learning_iterations)
@@ -152,21 +188,27 @@ class BraxLearningRunner(LearningRunner):
                 learning_rate_schedule={"adaptive_kl": "ADAPTIVE_KL", "none": "NONE"}[
                     algo_cfg["learning_rate_schedule"]
                 ],
-                network_factory=lambda *arg, **kwarg: ppo.ppo_networks.make_ppo_networks(
-                    *arg,
-                    **kwarg,
-                    policy_hidden_layer_sizes=algo_cfg["layers"],
-                    value_hidden_layer_sizes=algo_cfg["layers"],
-                    activation={
-                        "elu": linen.elu,
-                        "relu": linen.relu,
-                        "tanh": linen.tanh,
-                    }[algo_cfg["activation"]],
-                ),
+                network_factory=_create_brax_network_factory(algo_cfg),
                 run_evals=False,
-                # TODO: better logging with progress bar!
                 progress_fn=progress_fn,
                 log_training_metrics=True,
             )
 
         raise ValueError(f"Unsupported algorithm: {algo_type}")
+
+
+def _create_brax_network_factory(algo_cfg: dict):
+    algo_type = algo_cfg["type"]
+    if algo_type == "ppo":
+        return functools.partial(
+            ppo_networks.make_ppo_networks,
+            policy_hidden_layer_sizes=algo_cfg["layers"],
+            value_hidden_layer_sizes=algo_cfg["layers"],
+            activation={
+                "elu": linen.elu,
+                "relu": linen.relu,
+                "tanh": linen.tanh,
+            }[algo_cfg["activation"]],
+        )
+
+    raise ValueError(f"Unsupported algorithm for brax network factory: {algo_type}")

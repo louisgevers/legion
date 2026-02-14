@@ -3,12 +3,14 @@ from argparse import ArgumentParser, Namespace
 from datetime import datetime
 
 from legion.runtime import make_runtime
+from legion.policy import PolicyLoader
 from legion.runner.learning import make_learning_runner
 from legion.utils import ConfigUtil
 from legion.runner.viewer import ViewerRunner
 from legion.logger.tensorboard import TensorboardLogger
 
 
+EXAMPLES_DIR = (Path(__file__)).parent.resolve(True)
 CONFIGS_DIR = (Path(__file__).parent.parent / "configs").resolve(True)
 
 
@@ -28,9 +30,7 @@ def run_learning(cfg_runtime: str, cfg_learning: str):
     runner = make_learning_runner(cfg_learning)
 
     # Create logger (with timestamped log directory)
-    log_dir = (
-        Path(__file__).parent / "runs" / datetime.now().strftime("%y-%m-%d_%H-%M-%S")
-    )
+    log_dir = EXAMPLES_DIR / "runs" / datetime.now().strftime("%y-%m-%d_%H-%M-%S")
     logger = TensorboardLogger(log_dir)
 
     # Start learning
@@ -38,6 +38,13 @@ def run_learning(cfg_runtime: str, cfg_learning: str):
 
     # Close the logger after learning
     logger.close()
+
+    # Save the policy to file
+    policy_file = EXAMPLES_DIR / "learned.policy"
+    policy.save(policy_file)
+
+    # Reload the policy from file
+    policy = PolicyLoader.load(policy_file)
 
     # Wait for user intervention before visualizing the policy
     input("Press anything to continue!")
