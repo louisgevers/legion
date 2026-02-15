@@ -59,6 +59,22 @@ class VelocityCommandObs:
         return vel_cmd
 
 
+@register(OBSERVATIONS, "angular_velocity_command")
+class VelocityCommandObs:
+    name = "angular_velocity_command"
+    required_signals = ("angular_velocity_command",)
+    size = 1
+
+    def __init__(self, backend: Backend, embodiment: Embodiment, actuator: Actuator):
+        pass
+
+    def __call__(
+        self, signals: tuple[ArrayLike, ...], sensor_data: SensorData
+    ) -> ArrayLike:
+        ang_vel_cmd = signals[0]
+        return ang_vel_cmd
+
+
 @register(OBSERVATIONS, "q")
 class JointPositionsObs:
     name = "q"

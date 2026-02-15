@@ -12,7 +12,7 @@ runtime:
 
 actuator:
   type: pd
-  gain: 0.78
+  gain: 1.0
   kp: 30
   kd: 0.5
 
@@ -22,11 +22,17 @@ signals:
   - type: episode_uniform_value
     name: velocity_command
     min_values:
-      - 0.2
-      - 0.0
+      - -1.0
+      - -0.5
     max_values:
       - 1.0
-      - 0.0
+      - 0.5
+  - type: episode_uniform_value
+    name: angular_velocity_command
+    min_values:
+      - -1.0
+    max_values:
+      - 1.0
 
 observations:
   - type: q
@@ -36,14 +42,18 @@ observations:
   - type: base_angular_vel
   - type: foot_contacts
   - type: velocity_command
+  - type: angular_velocity_command
   - type: prev_action
 
 rewards:
   - type: velocity_tracking
     weight: 1.0
     sensitivity: 0.25
+  - type: angular_velocity_tracking
+    weight: 1.0
+    sensitivity: 0.25
   - type: action_regularization
-    weight: -0.004
+    weight: -0.05
 
 terminations:
   - type: has_nans

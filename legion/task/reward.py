@@ -59,6 +59,35 @@ class VelocityTrackingReward:
         return self.backend.exp(-error / self.sensitivity)
 
 
+@register(REWARDS, "angular_velocity_tracking")
+class AngularVelocityTrackingReward:
+    name = "angular_velocity_tracking"
+    required_signals = ("angular_velocity_command",)
+
+    def __init__(
+        self,
+        backend: Backend,
+        embodiment: Embodiment,
+        actuator: Actuator,
+        weight: float,
+        sensitivity: float,
+    ):
+        self.backend = backend
+        self.weight = weight
+        self.sensitivity = sensitivity
+
+    def __call__(
+        self,
+        signals: ArrayLike,
+        sensor_data: SensorData,
+        action: ArrayLike,
+    ):
+        cmd = signals[0]
+        actual = sensor_data.local_base_angular_vel(self.backend)[2]  # wz
+        error = self.backend.sum(self.backend.square(actual - cmd))
+        return self.backend.exp(-error / self.sensitivity)
+
+
 @register(REWARDS, "action_regularization")
 class ActionRegularizationReward:
     name = "action_regularization"
