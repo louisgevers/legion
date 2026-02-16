@@ -80,6 +80,7 @@ class MJXPhysics:
             t=self.backend.array(state.data.time),
             q=self.backend.array(state.data.qpos[self._joint_qpos_idx]),
             dq=self.backend.array(state.data.qvel[self._joint_qvel_idx]),
+            ddq=self.backend.array(state.data.qacc[self._joint_qvel_idx]),
             tau=self.backend.array(state.data.ctrl[self._actuator_idx]),
             base_xyz=self.backend.array(state.data.qpos[self._base_qpos_idx][:3]),
             base_quat=self.backend.roll(
@@ -91,6 +92,9 @@ class MJXPhysics:
             base_angular_vel=self.backend.array(
                 state.data.qvel[self._base_qvel_idx][3:]
             ),
+            n_contacts=self.backend.sum(
+                state.data.contact.dist < 0
+            ),  # Only when distance is negative is there a contact
             foot_contacts=self._compute_foot_contacts(state),
         )
 

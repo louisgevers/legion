@@ -61,11 +61,12 @@ class Task:
         task_state: TaskState,
         sensor_data: SensorData,
         action: ArrayLike,
+        dt: float,
         rng: RNGKey,
     ) -> TaskState:
         rng_signals = self.backend.rng_split(rng, len(self.signal_defs))
         signals = tuple(
-            s.step(prev_signal, sensor_data, action, r)
+            s.step(prev_signal, sensor_data, action, dt, r)
             for s, prev_signal, r in zip(
                 self.signal_defs, task_state.signals, rng_signals
             )

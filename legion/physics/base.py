@@ -14,6 +14,7 @@ class SensorData(NamedTuple):
 
     q: ArrayLike  # joint positions (n_joints,)
     dq: ArrayLike  # joint velocities (n_joints,)
+    ddq: ArrayLike  # joint accelerations (n_joints,)
 
     tau: ArrayLike  # applied torques (n_actuators,)
 
@@ -22,6 +23,7 @@ class SensorData(NamedTuple):
     base_linear_vel: ArrayLike  # base linear velocity (3,)
     base_angular_vel: ArrayLike  # base angular velocity (3,)
 
+    n_contacts: ArrayLike  # number of contacts (1,)
     foot_contacts: ArrayLike  # boolean foot contacts (n_feet,)
 
     def local_base_linear_vel(self, backend: Backend) -> ArrayLike:

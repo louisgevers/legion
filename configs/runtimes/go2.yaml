@@ -17,10 +17,9 @@ actuator:
   kd: 0.5
 
 signals:
-  - type: prev_action
-    name: prev_action
+  # COMMANDS
   - type: episode_uniform_value
-    name: velocity_command
+    name: linear_velocity_command
     min_values:
       - -1.0
       - -0.5
@@ -33,6 +32,12 @@ signals:
       - -1.0
     max_values:
       - 1.0
+  # HISTORY
+  - type: prev_action
+    name: prev_action
+  # FEET AIR TIME REWARD
+  - type: feet_contact_signals
+    name: feet_contact_signals
 
 observations:
   - type: q
@@ -41,19 +46,39 @@ observations:
   - type: base_linear_vel
   - type: base_angular_vel
   - type: foot_contacts
-  - type: velocity_command
+  - type: linear_velocity_command
   - type: angular_velocity_command
   - type: prev_action
 
 rewards:
-  - type: velocity_tracking
+  # Task rewards
+  - type: linear_velocity_tracking
     weight: 1.0
     sensitivity: 0.25
   - type: angular_velocity_tracking
-    weight: 1.0
+    weight: 0.5
     sensitivity: 0.25
+  # Penalties (motion)
+  - type: linear_velocity_penalty
+    weight: -1
+  - type: angular_velocity_penalty
+    weight: -0.005
+  - type: joint_velocity_penalty
+    weight: -0.0001
+  - type: joint_acceleration_penalty
+    weight: -0.000001
+  # Penalties (efficiency)
+  - type: joint_torque_penalty
+    weight: -0.00002
+  # Penalties (regularization)
   - type: action_regularization
-    weight: -0.05
+    weight: -0.01
+  # Penalties (naturalness)
+  - type: contacts_penalty
+    weight: -0.001
+  - type: feet_air_time
+    weight: 2
+    min_time: 0.5
 
 terminations:
   - type: has_nans

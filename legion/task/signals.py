@@ -27,6 +27,7 @@ class Signal(Protocol):
         signal: ArrayLike,
         sensor_data: SensorData,
         action: ArrayLike,
+        dt: float,
         rng: RNGKey,
     ) -> ArrayLike: ...
 
@@ -53,6 +54,7 @@ class PreviousActionSignal:
         signal: ArrayLike,
         sensor_data: SensorData,
         action: ArrayLike,
+        dt: float,
         rng: RNGKey,
     ) -> ArrayLike:
         return self.backend.array(action)
@@ -82,6 +84,7 @@ class FixedValuesSignal:
         signal: ArrayLike,
         sensor_data: SensorData,
         action: ArrayLike,
+        dt: float,
         rng: RNGKey,
     ):
         return signal
@@ -119,6 +122,48 @@ class EpisodeUniformValueSignal:
         signal: ArrayLike,
         sensor_data: SensorData,
         action: ArrayLike,
+        dt: float,
         rng: RNGKey,
     ):
         return signal
+
+
+@register(SIGNALS, "feet_contact_signals")
+class FeetContactSignals:
+    """Stateful signal tracking of
+    - air time per foot (n_feet,)
+    - previous contact per foot (n_feet,)
+    """
+
+    def __init__(
+        self,
+        name: str,
+        backend: Backend,
+        embodiment: Embodiment,
+        actuator: Actuator,
+    ):
+        self.name = name
+        self.backend = backend
+        self.n_feet = embodiment.n_feet
+
+        self.shape = (2 * self.n_feet,)
+
+    def reset(self, rng: RNGKey) -> ArrayLike:
+        return self.backend.zeros(self.shape)
+
+    def step(
+        self,
+        signal: ArrayLike,
+        sensor_data: SensorData,
+        action: ArrayLike,
+        dt: float,
+        rng: RNGKey,
+    ):
+        air_time = signal[: self.n_feet]
+        prev_contact = signal[self.n_feet :]
+        contact = sensor_data.foot_contacts.astype(air_time.dtype)
+
+        # Increment air time if no contact
+        new_air_time = self.backend.where(contact > 0.5, 0.0, air_time + dt)
+
+        return self.backend.concatenate([new_air_time, contact], axis=0)

@@ -106,7 +106,9 @@ class Runtime:
         reward = self.backend.clip(reward, min=0, max=None)
 
         # Update signals for next step (AFTER the transition)
-        task_state = self.task.step(state.task, sensor_data, action, task_rng)
+        task_state = self.task.step(
+            state.task, sensor_data, action, self._policy_dt, task_rng
+        )
 
         return RuntimeTransition(
             state=RuntimeState(

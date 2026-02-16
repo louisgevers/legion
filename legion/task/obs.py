@@ -43,10 +43,10 @@ class PrevActionObs:
         return prev_action
 
 
-@register(OBSERVATIONS, "velocity_command")
-class VelocityCommandObs:
-    name = "velocity_command"
-    required_signals = ("velocity_command",)
+@register(OBSERVATIONS, "linear_velocity_command")
+class LinearVelocityCommandObs:
+    name = "linear_velocity_command"
+    required_signals = ("linear_velocity_command",)
     size = 2
 
     def __init__(self, backend: Backend, embodiment: Embodiment, actuator: Actuator):
@@ -60,7 +60,7 @@ class VelocityCommandObs:
 
 
 @register(OBSERVATIONS, "angular_velocity_command")
-class VelocityCommandObs:
+class AngularVelocityCommandObs:
     name = "angular_velocity_command"
     required_signals = ("angular_velocity_command",)
     size = 1

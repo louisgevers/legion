@@ -51,9 +51,9 @@ def run_learning(cfg_runtime: str, cfg_learning: str):
 
     # Create an evaluation runtime with fixed velocity
     cfg_eval = cfg_runtime.copy()
-    cfg_eval["signals"][1] = {
+    cfg_eval["signals"][0] = {
         "type": "fixed_value",
-        "name": "velocity_command",
+        "name": "linear_velocity_command",
         "values": [0.5, 0.0],
     }
     runtime = make_runtime(cfg_eval)
