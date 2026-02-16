@@ -12,7 +12,12 @@ license = { file = "LICENSE" }
 authors = [{ name = "Louis Gevers" }]
 
 # Common dependencies across all
-dependencies = ["numpy>=2.0.0", "PyYAML>=6.0", "tqdm>=4.0"]
+dependencies = [
+    "numpy>=2.0.0",
+    "PyYAML>=6.0",
+    "tqdm>=4.0",
+    "opencv-python>=4.0",
+]
 
 [project.optional-dependencies]
 # Simulator specific installs

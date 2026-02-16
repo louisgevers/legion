@@ -38,6 +38,10 @@
         </default>
     </default>
 
+    <visual>
+        <global offwidth="1080" offheight="1080" />
+    </visual>
+
     <asset>
         <material name="metal" rgba=".9 .95 .95 1" />
         <material name="black" rgba="0 0 0 1" />
