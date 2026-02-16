@@ -8,7 +8,7 @@ physics:
 
 runtime:
   actuator_hz: 200
-  policy_hz: 100
+  policy_hz: 50
 
 actuator:
   type: pd
@@ -66,7 +66,7 @@ rewards:
   - type: joint_velocity_penalty
     weight: -0.0001
   - type: joint_acceleration_penalty
-    weight: -0.000001
+    weight: -0.000002
   # Penalties (efficiency)
   - type: joint_torque_penalty
     weight: -0.00002
@@ -82,6 +82,8 @@ rewards:
 
 terminations:
   - type: has_nans
+  - type: timeout
+    max_duration: 10.0
   - type: fall
     min_height: 0.1
     max_angle: 1.57

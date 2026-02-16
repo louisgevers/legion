@@ -76,3 +76,22 @@ class FallTermination:
             | (self.backend.abs(roll) > self.max_angle)
             | (self.backend.abs(pitch) > self.max_angle)
         )
+
+
+@register(TERMINATIONS, "timeout")
+class TimeoutTermination:
+    name = "timeout"
+    required_signals = ()
+
+    def __init__(
+        self,
+        backend: Backend,
+        embodiment: Embodiment,
+        actuator: Actuator,
+        max_duration: float,
+    ):
+        self.backend = backend
+        self.max_duration = max_duration
+
+    def __call__(self, signals: ArrayLike, sensor_data: SensorData):
+        return sensor_data.t >= self.max_duration

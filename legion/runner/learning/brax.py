@@ -125,8 +125,14 @@ class BraxPolicy(Policy):
 class BraxLearningRunner(LearningRunner):
 
     def learn_impl(self, runtime: Runtime, algo_cfg: dict, logger: Logger) -> Policy:
+        # Extract episode length
+        episode_length = None
+        for term in runtime.task.terminations:
+            if term.name == "timeout":
+                episode_length = int(term.max_duration / runtime._policy_dt)
+
         # Create training function
-        learn_fn = self._create_learn_fn(algo_cfg, logger)
+        learn_fn = self._create_learn_fn(algo_cfg, logger, episode_length)
 
         # Wrap the runtime
         env = _BraxEnv(runtime)
@@ -140,7 +146,9 @@ class BraxLearningRunner(LearningRunner):
         # Create policy
         return BraxPolicy(algo_cfg, params, env.observation_size, env.action_size)
 
-    def _create_learn_fn(self, algo_cfg: dict, logger: Logger):
+    def _create_learn_fn(
+        self, algo_cfg: dict, logger: Logger, episode_length: float | None
+    ):
         # Edit a copy
         algo_cfg = deepcopy(algo_cfg)
 
@@ -166,7 +174,7 @@ class BraxLearningRunner(LearningRunner):
                 ppo.train,
                 num_timesteps=self.n_iterations,
                 num_envs=self.n_envs,
-                episode_length=1_000,  # FIXME: should be implemented in runtime
+                episode_length=episode_length,
                 action_repeat=1,
                 learning_rate=algo_cfg["learning_rate"],
                 entropy_cost=algo_cfg["entropy_coef"],
