@@ -14,7 +14,7 @@ EXAMPLES_DIR = (Path(__file__)).parent.resolve(True)
 CONFIGS_DIR = (Path(__file__).parent.parent / "configs").resolve(True)
 
 
-def run_learning(cfg_runtime: str, cfg_learning: str):
+def run_learning(cfg_runtime: str, cfg_learning: str, tag: str | None):
     # Utils to load configs
     runtime_configs = ConfigUtil(CONFIGS_DIR / "runtimes")
     learning_configs = ConfigUtil(CONFIGS_DIR / "learning")
@@ -30,7 +30,8 @@ def run_learning(cfg_runtime: str, cfg_learning: str):
     runner = make_learning_runner(cfg_learning)
 
     # Create logger (with timestamped log directory)
-    log_dir = EXAMPLES_DIR / "runs" / datetime.now().strftime("%y-%m-%d_%H-%M-%S")
+    log_name = tag if tag is not None else datetime.now().strftime("%y-%m-%d_%H-%M-%S")
+    log_dir = EXAMPLES_DIR / "runs" / log_name
     logger = TensorboardLogger(log_dir)
 
     # Start learning
@@ -40,7 +41,8 @@ def run_learning(cfg_runtime: str, cfg_learning: str):
     logger.close()
 
     # Save the policy to file
-    policy_file = EXAMPLES_DIR / "learned.policy"
+    policy_name = tag if tag is not None else "learned"
+    policy_file = EXAMPLES_DIR / f"{tag}.policy"
     policy.save(policy_file)
 
     # Reload the policy from file
@@ -80,9 +82,17 @@ def parse_cli_args() -> Namespace:
         default="brax",
         help="Name of the learning config",
     )
+    parser.add_argument(
+        "-t",
+        "--tag",
+        type=str,
+        default=None,
+        required=False,
+        help="Optional tag to change the log directory name",
+    )
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_cli_args()
-    run_learning(args.runtime, args.learning)
+    run_learning(args.runtime, args.learning, args.tag)
