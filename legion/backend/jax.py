@@ -61,5 +61,9 @@ class JaxBackend:
         return jax.random.uniform(key, shape, minval=minval, maxval=maxval)
 
     @staticmethod
+    def rng_exponential(key, shape):
+        return jax.random.exponential(key, shape)
+
+    @staticmethod
     def rng_normal(key, shape, mean=0.0, std=1.0):
         return mean + std * jax.random.normal(key, shape)

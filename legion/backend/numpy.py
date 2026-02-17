@@ -64,5 +64,9 @@ class NumpyBackend:
         return key.uniform(minval, maxval, size=shape)
 
     @staticmethod
+    def rng_exponential(key, shape):
+        return key.uniform(size=shape)
+
+    @staticmethod
     def rng_normal(key, shape, mean=0.0, std=1.0):
         return key.normal(mean, std, size=shape)

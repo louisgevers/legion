@@ -55,7 +55,7 @@ class LinearVelocityCommandObs:
     def __call__(
         self, signals: tuple[ArrayLike, ...], sensor_data: SensorData
     ) -> ArrayLike:
-        vel_cmd = signals[0]
+        vel_cmd = signals[0][:2]
         return vel_cmd
 
 
@@ -71,7 +71,7 @@ class AngularVelocityCommandObs:
     def __call__(
         self, signals: tuple[ArrayLike, ...], sensor_data: SensorData
     ) -> ArrayLike:
-        ang_vel_cmd = signals[0]
+        ang_vel_cmd = signals[0][:1]
         return ang_vel_cmd
 
 

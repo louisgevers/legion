@@ -128,6 +128,73 @@ class EpisodeUniformValueSignal:
         return signal
 
 
+@register(SIGNALS, "resampled_uniform_value")
+class ResampledUniformValueSignal:
+    """Stateful resampled values from uniform distribution
+    - random uniform values
+    - remaining time before next resampling
+    """
+
+    def __init__(
+        self,
+        name: str,
+        backend: Backend,
+        embodiment: Embodiment,
+        actuator: Actuator,
+        max_resample_duration: float,
+        min_values: list[float],
+        max_values: list[float],
+    ):
+        assert len(min_values) == len(
+            max_values
+        ), "Min and max values length does not match"
+
+        self.name = name
+        self.shape = (len(min_values),)
+        self.backend = backend
+
+        self.max_resample_duration = max_resample_duration
+        self.min_values = self.backend.array(min_values)
+        self.max_values = self.backend.array(max_values)
+
+    def reset(self, rng: RNGKey) -> ArrayLike:
+        key1, key2 = self.backend.rng_split(rng)
+        values = self._sample_values(key1)
+        sample_time = self._sample_resample_time(key2)
+        return self.backend.concatenate([values, sample_time], axis=0)
+
+    def step(
+        self,
+        signal: ArrayLike,
+        sensor_data: SensorData,
+        action: ArrayLike,
+        dt: float,
+        rng: RNGKey,
+    ):
+        values = signal[:-1]
+        sample_time = signal[-1] - dt
+
+        key1, key2 = self.backend.rng_split(rng)
+        next_values = self.backend.where(
+            sample_time <= 0, self._sample_values(key1), values
+        )
+        next_times = self.backend.where(
+            sample_time <= 0, self._sample_resample_time(key2), sample_time
+        )
+
+        return self.backend.concatenate([next_values, next_times])
+
+    def _sample_values(self, rng: RNGKey) -> ArrayLike:
+        values = self.backend.rng_uniform(rng, self.shape)
+        return self.min_values + (self.max_values - self.min_values) * values
+
+    def _sample_resample_time(self, rng: RNGKey) -> ArrayLike:
+        sample_time = (
+            self.backend.rng_exponential(rng, (1,)) * self.max_resample_duration
+        )
+        return sample_time
+
+
 @register(SIGNALS, "feet_contact_signals")
 class FeetContactSignals:
     """Stateful signal tracking of

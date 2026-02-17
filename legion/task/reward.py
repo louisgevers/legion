@@ -53,7 +53,7 @@ class LinearVelocityTrackingReward:
         sensor_data: SensorData,
         action: ArrayLike,
     ):
-        cmd = signals[0]
+        cmd = signals[0][:2]
         actual = sensor_data.local_base_linear_vel(self.backend)[:2]  # vx, vy
         error = self.backend.sum(self.backend.square(actual - cmd))
         return self.backend.exp(-error / self.sensitivity)
@@ -82,7 +82,7 @@ class AngularVelocityTrackingReward:
         sensor_data: SensorData,
         action: ArrayLike,
     ):
-        cmd = signals[0]
+        cmd = signals[0][0]
         actual = sensor_data.local_base_angular_vel(self.backend)[2]  # wz
         error = self.backend.sum(self.backend.square(actual - cmd))
         return self.backend.exp(-error / self.sensitivity)
@@ -163,6 +163,36 @@ class AngularVelocityPenalty:
         return self.backend.sum(self.backend.square(ang_vel_xy))
 
 
+@register(REWARDS, "orientation_penalty")
+class OrientationPenalty:
+    name = "orientation_penalty"
+    required_signals = ()
+
+    def __init__(
+        self,
+        backend: Backend,
+        embodiment: Embodiment,
+        actuator: Actuator,
+        weight: float,
+    ):
+        self.backend = backend
+        self.weight = weight
+        self.gravity_vector = self.backend.array([0, 0, -1])
+
+    def __call__(
+        self,
+        signals: ArrayLike,
+        sensor_data: SensorData,
+        action: ArrayLike,
+    ):
+        # Compute gravity vector
+        gravity = self.backend.quat_rotate(
+            sensor_data.base_quat, self.gravity_vector, inverse=True
+        )
+        # Penalize any offsets in xy orientations
+        return self.backend.sum(self.backend.square(gravity[:2]))
+
+
 @register(REWARDS, "joint_velocity_penalty")
 class JointVelocityPenalty:
     name = "joint_velocity_penalty"
@@ -238,6 +268,30 @@ class JointTorquePenalty:
         action: ArrayLike,
     ):
         return self.backend.sum(self.backend.square(sensor_data.tau))
+
+
+@register(REWARDS, "energy_penalty")
+class EnergyPenalty:
+    name = "energy_penalty"
+    required_signals = ()
+
+    def __init__(
+        self,
+        backend: Backend,
+        embodiment: Embodiment,
+        actuator: Actuator,
+        weight: float,
+    ):
+        self.backend = backend
+        self.weight = weight
+
+    def __call__(
+        self,
+        signals: ArrayLike,
+        sensor_data: SensorData,
+        action: ArrayLike,
+    ):
+        return self.backend.sum(self.backend.abs(sensor_data.tau * sensor_data.dq))
 
 
 @register(REWARDS, "contacts_penalty")
