@@ -41,7 +41,7 @@ class _BraxEnv:
         # Initial empty metrics
         metrics = {
             metric: self.runtime.backend.zeros(())
-            for metric in self.runtime.task.metric_names_rewards
+            for metric in self.runtime.task.metric_names
         }
 
         return BraxState(
@@ -49,7 +49,7 @@ class _BraxEnv:
             obs=obs,
             reward=reward,
             done=done,
-            metrics=metrics,
+            metrics=self._add_per_step_metrics(metrics, reward),
         )
 
     def step(self, state: BraxState, action: jax.Array) -> BraxState:
@@ -59,7 +59,16 @@ class _BraxEnv:
             obs=transition.obs,
             reward=transition.reward,
             done=transition.done.astype("float32"),  # Brax expects float32s
-            metrics=transition.metrics,
+            metrics=self._add_per_step_metrics(transition.metrics, transition.reward),
+        )
+
+    def _add_per_step_metrics(self, metrics: dict, reward: float) -> dict:
+        # Brax only provides step based statistics when there's a _per_step suffix
+        dt = self.runtime._policy_dt
+        return (
+            metrics
+            | {f"{k}_per_step": v / dt for k, v in metrics.items()}
+            | {"sum_reward_per_step": reward / dt}
         )
 
     @property

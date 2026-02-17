@@ -41,18 +41,33 @@ def make_runtime(cfg: dict) -> Runtime:
     obs = _build_terms(cfg["observations"], OBSERVATIONS, backend, embodiment, actuator)
     rew = _build_terms(cfg["rewards"], REWARDS, backend, embodiment, actuator)
     ter = _build_terms(cfg["terminations"], TERMINATIONS, backend, embodiment, actuator)
+    metrics = []
+    if "metrics" in cfg:
+        # Reward terms with weight 1 as metrics
+        metrics = _build_terms(
+            cfg["metrics"], REWARDS, backend, embodiment, actuator, weight=1.0
+        )
 
     # Build task
     # - depends on backend, signals, observations, rewards, and terminations
-    task = Task(backend, signals, obs, rew, ter)
+    task = Task(backend, signals, obs, rew, ter, metrics)
 
     # Build runtime
     # - depends on embodiment, physics, actuator, and task
     return Runtime(embodiment, physics, actuator, task, **cfg["runtime"])
 
 
-def _build_terms(terms: list[dict], registry: dict, backend, embodiment, actuator):
+def _build_terms(
+    terms: list[dict], registry: dict, backend, embodiment, actuator, **extra_kwargs
+):
     return [
-        build(term, registry, backend=backend, embodiment=embodiment, actuator=actuator)
+        build(
+            term,
+            registry,
+            backend=backend,
+            embodiment=embodiment,
+            actuator=actuator,
+            **extra_kwargs,
+        )
         for term in terms
     ]

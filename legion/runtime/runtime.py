@@ -105,6 +105,10 @@ class Runtime:
         # Clip negative rewards
         reward = self.backend.clip(reward, min=0, max=None)
 
+        # Collect additional metrics
+        metrics = self.task.get_metrics(state.task, sensor_data, action)
+        all_metrics = metrics_reward | metrics
+
         # Update signals for next step (AFTER the transition)
         task_state = self.task.step(
             state.task, sensor_data, action, self._policy_dt, task_rng
@@ -120,7 +124,7 @@ class Runtime:
             obs=obs,
             reward=reward,
             done=done,
-            metrics=metrics_reward,
+            metrics=all_metrics,
         )
 
     def observe(self, state: RuntimeState) -> ArrayLike:

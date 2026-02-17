@@ -23,6 +23,7 @@ class Task:
         observations: list[ObsTerm],
         rewards: list[RewardTerm],
         terminations: list[TerminationTerm],
+        metrics: list[RewardTerm] = [],  # Optional unweighted rewards as metrics
     ):
         self.backend = backend
 
@@ -31,6 +32,7 @@ class Task:
         self.observations = tuple(observations)
         self.rewards = tuple(rewards)
         self.terminations = tuple(terminations)
+        self.metrics = tuple(metrics)
 
         # Build static indices for runtime
         signal_index = {s.name: i for i, s in enumerate(self.signal_defs)}
@@ -43,13 +45,19 @@ class Task:
         self._sig_indices_ter = self._build_sig_indices(
             signal_index, self.terminations, "Termination"
         )
+        self._sig_indices_metrics = self._build_sig_indices(
+            signal_index, self.metrics, "Metrics"
+        )
 
-        # Build metric keys
-        self._rew_metric_names = tuple(f"reward/{rew.name}" for rew in self.rewards)
+        # Build metric names
+        self._metric_names = tuple(f"metric/{met.name}" for met in self.metrics)
+        self._metric_names_weighted_rewards = tuple(
+            f"reward/{rew.name}" for rew in self.rewards
+        )  # Weighted individual reward terms as additional metrics
 
     @property
-    def metric_names_rewards(self) -> tuple[str, ...]:
-        return self._rew_metric_names
+    def metric_names(self) -> tuple[str, ...]:
+        return self._metric_names + self._metric_names_weighted_rewards
 
     def reset(self, rng: RNGKey) -> TaskState:
         rng_signals = self.backend.rng_split(rng, len(self.signal_defs))
@@ -108,7 +116,9 @@ class Task:
         # Sum weighted rewards together
         total = self.backend.sum(weighted_rewards)
         # Put individual reward terms in metrics
-        metrics_reward = dict(zip(self._rew_metric_names, weighted_rewards))
+        metrics_reward = dict(
+            zip(self._metric_names_weighted_rewards, weighted_rewards)
+        )
 
         return total, metrics_reward
 
@@ -128,6 +138,27 @@ class Task:
         )
         # Return if any of the termination functions return true
         return self.backend.any(terminations)
+
+    def get_metrics(
+        self, task_state: TaskState, sensor_data: SensorData, action: ArrayLike
+    ) -> dict[str, ArrayLike]:
+        signals = tuple(
+            # For each metric, collect the list of signals
+            tuple(task_state.signals[i] for i in idx)
+            # For each metric, collect the list of signal indices
+            for idx in self._sig_indices_metrics
+        )
+        # Compute metrics
+        metrics = self.backend.array(
+            [
+                metric(signal, sensor_data, action)
+                for metric, signal in zip(self.metrics, signals)
+            ]
+        )
+        # Combine with metric names
+        metrics = dict(zip(self._metric_names, metrics))
+
+        return metrics
 
     def _build_sig_indices(
         self, signal_index: dict[str, int], terms: tuple, term_name: str
