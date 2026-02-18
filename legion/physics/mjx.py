@@ -81,7 +81,7 @@ class MJXPhysics:
             q=self.backend.array(state.data.qpos[self._joint_qpos_idx]),
             dq=self.backend.array(state.data.qvel[self._joint_qvel_idx]),
             ddq=self.backend.array(state.data.qacc[self._joint_qvel_idx]),
-            tau=self.backend.array(state.data.ctrl[self._actuator_idx]),
+            tau=self.backend.array(state.data.actuator_force[self._actuator_idx]),
             base_xyz=self.backend.array(state.data.qpos[self._base_qpos_idx][:3]),
             base_quat=self.backend.roll(
                 state.data.qpos[self._base_qpos_idx][3:], -1
@@ -109,9 +109,18 @@ class MJXPhysics:
             state.data.contact.geom[:, None, 1] == self._foot_geom_ids[None, :]
         )  # (233, n_feet)
 
+        # Get mask contacts that involve floor
+        FLOOR_GEOM_ID = 0
+        floor_contact_geoms = (state.data.contact.geom[:, 0] == FLOOR_GEOM_ID) | (
+            state.data.contact.geom[:, 1] == FLOOR_GEOM_ID
+        )  # (233,)
+
         # Collapse active contacts
         foot_in_contact = self.backend.any(
-            active_contacts[:, None] & foot_contact_geoms, axis=0
+            active_contacts[:, None]
+            & foot_contact_geoms
+            & floor_contact_geoms[:, None],
+            axis=0,
         )  # (n_feet,)
 
         return foot_in_contact

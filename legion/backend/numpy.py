@@ -10,6 +10,7 @@ class NumpyBackend:
     zeros = staticmethod(np.zeros)
     ones = staticmethod(np.ones)
     concatenate = staticmethod(np.concatenate)
+    tile = staticmethod(np.tile)
     where = staticmethod(np.where)
     roll = staticmethod(np.roll)
     clip = staticmethod(np.clip)
@@ -66,6 +67,10 @@ class NumpyBackend:
     @staticmethod
     def rng_exponential(key, shape):
         return key.uniform(size=shape)
+
+    @staticmethod
+    def rng_bernoulli(key, p, shape):
+        return key.binomial(n=1, p=p, size=shape)
 
     @staticmethod
     def rng_normal(key, shape, mean=0.0, std=1.0):

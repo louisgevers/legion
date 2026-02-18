@@ -51,13 +51,8 @@ def run_learning(cfg_runtime: str, cfg_learning: str, tag: str | None):
     # Wait for user intervention before visualizing the policy
     input("Press anything to continue!")
 
-    # Create an evaluation runtime with fixed velocity
+    # Create an evaluation runtime (can optionally modify it)
     cfg_eval = cfg_runtime.copy()
-    cfg_eval["signals"][0] = {
-        "type": "fixed_value",
-        "name": "linear_velocity_command",
-        "values": [0.5, 0.0],
-    }
     runtime = make_runtime(cfg_eval)
 
     # Run with a viewer

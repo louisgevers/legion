@@ -8,30 +8,28 @@ physics:
 
 runtime:
   actuator_hz: 200
-  policy_hz: 50
+  policy_hz: 100
 
 actuator:
   type: pd
-  gain: 1.0
-  kp: 30
-  kd: 0.5
+  gain: 0.5
+  kp: 55
+  kd: 1
 
 signals:
   # COMMANDS
-  - type: episode_uniform_value
+  - type: resampled_uniform_value
     name: linear_velocity_command
-    min_values:
-      - -1.0
-      - -0.5
-    max_values:
-      - 1.0
-      - 0.5
-  - type: episode_uniform_value
+    max_resample_duration: 5.0
+    min_values: [-1.0, 0.5]
+    max_values: [1.0, 0.5]
+    p_nonzero: [0.9, 0.25]
+  - type: resampled_uniform_value
     name: angular_velocity_command
-    min_values:
-      - -1.0
-    max_values:
-      - 1.0
+    max_resample_duration: 5.0
+    min_values: -1.0
+    max_values: 1.0
+    p_nonzero: 0.5
   # HISTORY
   - type: prev_action
     name: prev_action
@@ -58,32 +56,49 @@ rewards:
   - type: angular_velocity_tracking
     weight: 0.5
     sensitivity: 0.25
-  # Penalties (motion)
+  # Posture rewards
+  - type: nominal_pose_tracking
+    weight: 0.5
+    sensitivity: 0.25
+    q_weights: [1.0, 1.0, 0.0] # Only hip and knee
+  # Penalties for motions in other DoFs
   - type: linear_velocity_penalty
-    weight: -1
+    weight: -2.0
   - type: angular_velocity_penalty
-    weight: -0.005
-  - type: joint_velocity_penalty
-    weight: -0.0001
-  - type: joint_acceleration_penalty
-    weight: -0.000002
-  # Penalties (efficiency)
-  - type: joint_torque_penalty
-    weight: -0.00002
-  # Penalties (regularization)
+    weight: -0.05
+  # Penalties for regularization
   - type: action_regularization
     weight: -0.01
+  - type: energy_penalty
+    weight: -0.001
   # Penalties (naturalness)
   - type: contacts_penalty
-    weight: -0.001
+    weight: -1.0
   - type: feet_air_time
-    weight: 2
-    min_time: 0.5
+    weight: 1.0
+    min_time: 0.1
 
 terminations:
   - type: has_nans
   - type: timeout
-    max_duration: 10.0
+    max_duration: 20.0
   - type: fall
     min_height: 0.1
     max_angle: 1.57
+
+metrics:
+  - type: nominal_pose_tracking
+    sensitivity: 0.25
+    q_weights: [1.0, 1.0, 0.0] # Only hip and knee
+  - type: linear_velocity_penalty
+  - type: angular_velocity_penalty
+  - type: action_regularization
+  - type: energy_penalty
+  - type: joint_torque_penalty
+  - type: orientation_penalty
+  - type: contacts_penalty
+  - type: feet_air_time
+    min_time: 0.0
+  - type: joint_velocity_penalty
+  - type: joint_acceleration_penalty
+  - type: joint_torque_penalty

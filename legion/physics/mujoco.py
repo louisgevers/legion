@@ -73,7 +73,7 @@ class MujocoPhysics:
             q=self.backend.array(state.data.qpos[self._joint_qpos_idx]),
             dq=self.backend.array(state.data.qvel[self._joint_qvel_idx]),
             ddq=self.backend.array(state.data.qacc[self._joint_qvel_idx]),
-            tau=self.backend.array(state.data.ctrl[self._actuator_idx]),
+            tau=self.backend.array(state.data.actuator_force[self._actuator_idx]),
             base_xyz=self.backend.array(state.data.qpos[self._base_qpos_idx][:3]),
             base_quat=self.backend.roll(
                 state.data.qpos[self._base_qpos_idx][3:], -1
@@ -89,11 +89,15 @@ class MujocoPhysics:
         )
 
     def _compute_foot_contacts(self, state: PhysicsState) -> ArrayLike:
+        FLOOR_GEOM_ID = 0
         contact_bools = self.backend.zeros(4)
         for i_con in range(state.data.ncon):
             contact = state.data.contact[i_con]
             for foot_i, foot_id in enumerate(self._foot_geom_ids):
-                if contact.geom1 == foot_id or contact.geom2 == foot_id:
+                # If contact with the floor
+                if (contact.geom1 == foot_id and contact.geom2 == FLOOR_GEOM_ID) or (
+                    contact.geom2 == foot_id and contact.geom1 == FLOOR_GEOM_ID
+                ):
                     contact_bools[foot_i] = 1
                     break
         return contact_bools

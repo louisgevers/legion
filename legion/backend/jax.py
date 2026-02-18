@@ -16,6 +16,7 @@ class JaxBackend:
     zeros = staticmethod(jnp.zeros)
     ones = staticmethod(jnp.ones)
     concatenate = staticmethod(jnp.concatenate)
+    tile = staticmethod(jnp.tile)
     where = staticmethod(jnp.where)
     roll = staticmethod(jnp.roll)
     clip = staticmethod(jnp.clip)
@@ -63,6 +64,10 @@ class JaxBackend:
     @staticmethod
     def rng_exponential(key, shape):
         return jax.random.exponential(key, shape)
+
+    @staticmethod
+    def rng_bernoulli(key, p, shape):
+        return jax.random.bernoulli(key, p, shape)
 
     @staticmethod
     def rng_normal(key, shape, mean=0.0, std=1.0):

@@ -30,6 +30,11 @@ class ConfigUtil:
 def override_dict(base: dict, override: dict) -> dict:
     for k, v in override.items():
         if isinstance(v, dict) and k in base:
-            override_dict(base[k], v)
+            if "type" in v and v["type"] != base[k]["type"]:
+                # Override the complete dict if types don't match
+                base[k] = v
+            else:
+                # Else only override internal keys recursively
+                override_dict(base[k], v)
         else:
             base[k] = v

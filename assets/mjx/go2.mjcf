@@ -7,7 +7,7 @@
 
     <default>
         <default class="go2">
-            <geom friction="0.4" margin="0.001" condim="1" />
+            <geom margin="0.001" condim="1" />
             <joint axis="0 1 0" damping="0.1" armature="0.01" frictionloss="0.2" />
             <motor ctrlrange="-23.7 23.7" />
 
@@ -19,7 +19,7 @@
             </default>
             <default class="knee">
                 <joint range="-2.7227 -0.83776" />
-                <motor ctrlrange="-45.42 45.43" />
+                <motor ctrlrange="-45.43 45.43" />
             </default>
             <default class="visual">
                 <geom type="mesh" contype="0" conaffinity="0" group="2" />
@@ -31,7 +31,7 @@
             <default class="collision">
                 <geom group="3" />
                 <default class="foot">
-                    <geom size="0.0175" pos="-0.002 0 -0.213" priority="1" solimp="0.015 1 0.031"
+                    <geom size="0.022" pos="-0.002 0 -0.213" priority="1" solimp="0.9 0.95 0.022"
                         condim="6" friction="0.8 0.02 0.01" />
                 </default>
             </default>

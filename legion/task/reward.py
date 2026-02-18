@@ -88,6 +88,43 @@ class AngularVelocityTrackingReward:
         return self.backend.exp(-error / self.sensitivity)
 
 
+@register(REWARDS, "nominal_pose_tracking")
+class NominalPoseTrackingReward:
+    name = "nominal_pose_tracking"
+    required_signals = ()
+
+    def __init__(
+        self,
+        backend: Backend,
+        embodiment: Embodiment,
+        actuator: Actuator,
+        weight: float,
+        sensitivity: float,
+        q_weights: list[float],
+    ):
+        self.backend = backend
+        self.weight = weight
+        self.sensitivity = sensitivity
+        self.q_nominal = self.backend.array(embodiment.q_nominal)
+
+        # Repeat q_weights if necessary to match q_nominal
+        q_weights = self.backend.array(q_weights)
+        self.q_weights = self.backend.tile(
+            q_weights, len(self.q_nominal) // len(q_weights)
+        )
+
+    def __call__(
+        self,
+        signals: ArrayLike,
+        sensor_data: SensorData,
+        action: ArrayLike,
+    ):
+        err = self.backend.sum(
+            self.backend.square(self.q_nominal - sensor_data.q) * self.q_weights
+        )
+        return self.backend.exp(-err / self.sensitivity)
+
+
 @register(REWARDS, "action_regularization")
 class ActionRegularizationReward:
     name = "action_regularization"
@@ -307,6 +344,7 @@ class ContactsPenalty:
         weight: float,
     ):
         self.weight = weight
+        self.backend = backend
 
     def __call__(
         self,
@@ -314,13 +352,17 @@ class ContactsPenalty:
         sensor_data: SensorData,
         action: ArrayLike,
     ):
-        return sensor_data.n_contacts
+        return sensor_data.n_contacts - self.backend.sum(sensor_data.foot_contacts)
 
 
 @register(REWARDS, "feet_air_time")
 class FeetAirTimeReward:
     name = "feet_air_time"
-    required_signals = ("feet_contact_signals",)
+    required_signals = (
+        "feet_contact_signals",
+        "linear_velocity_command",
+        "angular_velocity_command",
+    )
 
     def __init__(
         self,
@@ -329,11 +371,13 @@ class FeetAirTimeReward:
         actuator: Actuator,
         weight: float,
         min_time: float,
+        min_cmd_amplitude: float = 0.01,
     ):
         self.backend = backend
         self.weight = weight
         self.n_feet = embodiment.n_feet
         self.min_time = min_time
+        self.min_cmd_amplitude = min_cmd_amplitude
 
     def __call__(
         self,
@@ -344,8 +388,15 @@ class FeetAirTimeReward:
         air_time = signals[0][: self.n_feet]
         prev_contact = signals[0][self.n_feet :]
 
-        # Detect first contact
-        contact = sensor_data.foot_contacts.astype(air_time.dtype)
-        first_contact = (contact > 0.5) & (prev_contact < 0.5)
+        cmd = self.backend.concatenate([signals[1][:2], signals[2][:1]], axis=0)
+        cmd_large_enough = self.backend.norm(cmd) > self.min_cmd_amplitude
 
-        return self.backend.sum((air_time - self.min_time) * first_contact)
+        # Detect first contact
+        contact = sensor_data.foot_contacts
+        contact_filt = (contact > 0.5) & (
+            prev_contact < 0.5
+        )  # Note prev contact is a float
+        first_contact = (air_time > 0.0) * contact_filt
+
+        rew_air_time = self.backend.sum((air_time - self.min_time) * first_contact)
+        return rew_air_time * cmd_large_enough  # No air time required for zero commands

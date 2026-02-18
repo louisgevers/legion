@@ -142,9 +142,13 @@ class ResampledUniformValueSignal:
         embodiment: Embodiment,
         actuator: Actuator,
         max_resample_duration: float,
-        min_values: list[float],
-        max_values: list[float],
+        min_values: float | list[float],
+        max_values: float | list[float],
+        p_nonzero: float | list[float] = 0.0,
     ):
+        if type(min_values) == float:
+            min_values = [min_values]
+            max_values = [max_values]
         assert len(min_values) == len(
             max_values
         ), "Min and max values length does not match"
@@ -156,11 +160,12 @@ class ResampledUniformValueSignal:
         self.max_resample_duration = max_resample_duration
         self.min_values = self.backend.array(min_values)
         self.max_values = self.backend.array(max_values)
+        self.p_nonzero = self.backend.array(p_nonzero)
 
     def reset(self, rng: RNGKey) -> ArrayLike:
-        key1, key2 = self.backend.rng_split(rng)
-        values = self._sample_values(key1)
-        sample_time = self._sample_resample_time(key2)
+        key1, key2, key3 = self.backend.rng_split(rng, 3)
+        values = self._sample_values(key1, key2)
+        sample_time = self._sample_resample_time(key3)
         return self.backend.concatenate([values, sample_time], axis=0)
 
     def step(
@@ -174,19 +179,23 @@ class ResampledUniformValueSignal:
         values = signal[:-1]
         sample_time = signal[-1] - dt
 
-        key1, key2 = self.backend.rng_split(rng)
+        key1, key2, key3 = self.backend.rng_split(rng, 3)
         next_values = self.backend.where(
-            sample_time <= 0, self._sample_values(key1), values
+            sample_time <= 0, self._sample_values(key1, key2), values
         )
         next_times = self.backend.where(
-            sample_time <= 0, self._sample_resample_time(key2), sample_time
+            sample_time <= 0, self._sample_resample_time(key3), sample_time
         )
 
         return self.backend.concatenate([next_values, next_times])
 
-    def _sample_values(self, rng: RNGKey) -> ArrayLike:
-        values = self.backend.rng_uniform(rng, self.shape)
-        return self.min_values + (self.max_values - self.min_values) * values
+    def _sample_values(self, key1: RNGKey, key2: RNGKey) -> ArrayLike:
+        values = self.backend.rng_uniform(key1, self.shape)
+        scaled_values = self.min_values + (self.max_values - self.min_values) * values
+        # Set the values to 0 with certain probability
+        zero_out = self.backend.rng_bernoulli(key2, self.p_nonzero, self.shape)
+
+        return scaled_values * zero_out
 
     def _sample_resample_time(self, rng: RNGKey) -> ArrayLike:
         sample_time = (
@@ -226,11 +235,10 @@ class FeetContactSignals:
         dt: float,
         rng: RNGKey,
     ):
+        # Increment air time if no contact
         air_time = signal[: self.n_feet]
         prev_contact = signal[self.n_feet :]
         contact = sensor_data.foot_contacts.astype(air_time.dtype)
-
-        # Increment air time if no contact
         new_air_time = self.backend.where(contact > 0.5, 0.0, air_time + dt)
 
         return self.backend.concatenate([new_air_time, contact], axis=0)

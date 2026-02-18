@@ -3,3 +3,4 @@ extends: go2
 physics:
   type: mjx
   mjcf: assets/mjx/go2.mjcf
+  dt: 0.005

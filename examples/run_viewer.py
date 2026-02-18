@@ -4,6 +4,7 @@ from argparse import ArgumentParser, Namespace
 from legion.runtime import make_runtime
 from legion.utils import ConfigUtil
 from legion.policy import PolicyLoader
+from legion.policy.random import RandomUniformPolicy
 from legion.runner.viewer import ViewerRunner
 
 
@@ -18,8 +19,14 @@ def run_viewer(cfg_name: str, policy: Path):
     cfg = runtime_configs.load(cfg_name)
     runtime = make_runtime(cfg)
 
-    # Load the policy
-    policy = PolicyLoader.load(policy)
+    if policy.name == "random":
+        # Create a random policy
+        policy = RandomUniformPolicy(
+            runtime.backend, runtime.actuator.n_u, action_scaling=1.0
+        )
+    else:
+        # Load the policy
+        policy = PolicyLoader.load(policy)
 
     # Create RNG key
     rng = runtime.backend.rng_seed(42)

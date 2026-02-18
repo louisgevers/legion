@@ -22,6 +22,6 @@ algorithm:
   gae_lambda: 0.95
   max_grad_norm: 0.5
   # Networks
-  layers: [256, 256, 128]
+  layers: [512, 256, 128]
   activation: elu
   normalize_observations: True
