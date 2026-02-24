@@ -23,6 +23,7 @@ class MJXViewer:
 
         # Update data from device
         mjx.get_data_into(self._mj_data, self._mj_model, state_to_use.data)
+        mujoco.mj_forward(self._mj_model, self._mj_data)
 
         # Sync viewer
         self._mj_viewer.sync()

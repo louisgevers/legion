@@ -51,6 +51,7 @@ class MJXRenderer:
         return self._mj_renderer.render()
 
     def _render_single(self, mj_data):
+        mujoco.mj_forward(self._mj_model, mj_data)
         self._mj_renderer.update_scene(mj_data, self._camera, self._options)
 
     def _render_batch(self, mj_datas):

@@ -78,6 +78,7 @@ class VideoRunner:
                     rng, key = runtime.backend.rng_split(rng)
                     state = jit_reset(key)
                     obs = jit_observe(state)
+                    next_render_time = 0.0
 
             # Render frame
             frame_rgb = renderer.render(state.physics)
