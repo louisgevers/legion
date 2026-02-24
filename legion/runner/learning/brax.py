@@ -133,7 +133,9 @@ class BraxPolicy(Policy):
 
 class BraxLearningRunner(LearningRunner):
 
-    def learn_impl(self, runtime: Runtime, algo_cfg: dict, logger: Logger) -> Policy:
+    def learn_impl(
+        self, runtime: Runtime, algo_cfg: dict, seed: int, logger: Logger
+    ) -> Policy:
         # Extract episode length
         episode_length = None
         for term in runtime.task.terminations:
@@ -141,7 +143,7 @@ class BraxLearningRunner(LearningRunner):
                 episode_length = int(term.max_duration / runtime._policy_dt)
 
         # Create training function
-        learn_fn = self._create_learn_fn(algo_cfg, logger, episode_length)
+        learn_fn = self._create_learn_fn(algo_cfg, seed, logger, episode_length)
 
         # Wrap the runtime
         env = _BraxEnv(runtime)
@@ -156,7 +158,7 @@ class BraxLearningRunner(LearningRunner):
         return BraxPolicy(algo_cfg, params, env.observation_size, env.action_size)
 
     def _create_learn_fn(
-        self, algo_cfg: dict, logger: Logger, episode_length: float | None
+        self, algo_cfg: dict, seed: int, logger: Logger, episode_length: float | None
     ):
         # Edit a copy
         algo_cfg = deepcopy(algo_cfg)
@@ -165,7 +167,7 @@ class BraxLearningRunner(LearningRunner):
         algo_type = algo_cfg["type"]
 
         # Create a progress bar
-        pbar = tqdm(total=self.learning_iterations)
+        pbar = tqdm(total=self.learning_iterations, leave=False)
 
         # Create progress function called at each training iteration
         def progress_fn(num_steps: int, metrics: dict[str, float]):
@@ -206,6 +208,7 @@ class BraxLearningRunner(LearningRunner):
                     algo_cfg["learning_rate_schedule"]
                 ],
                 network_factory=_create_brax_network_factory(algo_cfg),
+                seed=seed,
                 run_evals=False,
                 progress_fn=progress_fn,
                 log_training_metrics=True,

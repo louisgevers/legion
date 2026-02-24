@@ -14,7 +14,9 @@ class LearningRunner(ABC):
         self.batch_size = n_envs * rollout_length
         self.n_iterations = self.batch_size * learning_iterations
 
-    def learn(self, runtime: Runtime, algo_cfg: dict, logger: Logger) -> Policy:
+    def learn(
+        self, runtime: Runtime, algo_cfg: dict, seed: int, logger: Logger
+    ) -> Policy:
         # Print some stats
         sim_steps = runtime._policy_decimation * self.n_iterations
         sim_duration = sim_steps * runtime.physics.dt
@@ -33,9 +35,9 @@ class LearningRunner(ABC):
             f"- simulation iterations:\t{sim_steps:_} (real time: {datetime.timedelta(seconds=int(sim_duration))})"
         )
 
-        return self.learn_impl(runtime, algo_cfg, logger)
+        return self.learn_impl(runtime, algo_cfg, seed, logger)
 
     @abstractmethod
     def learn_impl(
-        self, runtime: Runtime, algo_cfg: dict, logger: Logger
+        self, runtime: Runtime, algo_cfg: dict, seed: int, logger: Logger
     ) -> Policy: ...
