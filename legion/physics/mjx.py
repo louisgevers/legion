@@ -5,6 +5,7 @@ from numpy.typing import ArrayLike
 from legion.backend import get_backend
 from legion.registry import PHYSICS, register
 from legion.embodiment import Embodiment
+from legion.utils.assets import get_asset_path
 
 from .base import PhysicsState, SensorData
 from .mujoco import (
@@ -24,7 +25,7 @@ class MJXPhysics:
         self.backend = get_backend("jax")
 
         # Load MJCF
-        self._mj_model = mujoco.MjModel.from_xml_path(mjcf)
+        self._mj_model = mujoco.MjModel.from_xml_path(get_asset_path(mjcf))
 
         # Set timestep
         self._mj_model.opt.timestep = dt
