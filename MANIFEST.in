@@ -1,0 +1,4 @@
+include assets/*
+recursive-include assets/meshes *
+recursive-include assets/mjx *
+recursive-include assets/mujoco *

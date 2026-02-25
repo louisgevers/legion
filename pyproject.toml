@@ -31,5 +31,5 @@ mujoco-mjx = [
     "jax[cuda12]; sys_platform != 'darwin'",
 ]
 
-[tool.setuptools]
-packages = ["legion"]
+[tool.setuptools.packages.find]
+include = ["legion*", "assets*"] # FIXME: migrate to a src/ dir
