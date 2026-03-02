@@ -1,5 +1,6 @@
 import mujoco
 from mujoco import mjx
+from typing import NamedTuple
 from numpy.typing import ArrayLike
 
 from legion.backend import get_backend
@@ -7,13 +8,20 @@ from legion.registry import PHYSICS, register
 from legion.embodiment import Embodiment
 from legion.utils.assets import get_asset_path
 
-from .base import PhysicsState, SensorData
+from .base import SensorData
 from .mujoco import (
     mj_base_indices,
     mj_joint_indices,
     mj_actuator_indices,
     mj_foot_geom_ids,
 )
+
+FLOOR_GEOM_ID = 0
+
+
+class MJXState(NamedTuple):
+    data: mjx.Data
+    model: mjx.Model
 
 
 @register(PHYSICS, "mjx")
@@ -30,9 +38,6 @@ class MJXPhysics:
         # Set timestep
         self._mj_model.opt.timestep = dt
 
-        # Create mjx model
-        self._mjx_model = mjx.put_model(self._mj_model)
-
         # Precompute joint indices
         self._base_qpos_idx, self._base_qvel_idx = mj_base_indices(
             self._mj_model, self.backend
@@ -47,13 +52,19 @@ class MJXPhysics:
         # Load foot geom ids for contact detection
         self._foot_geom_ids = mj_foot_geom_ids(self._mj_model, embodiment, self.backend)
 
+        # Load base body index
+        self._base_body_idx = self._mj_model.body("base").id
+
     @property
     def dt(self) -> float:
         return self._mj_model.opt.timestep
 
-    def reset(self, q: ArrayLike, base_xyz: ArrayLike) -> PhysicsState:
+    def reset(self, q: ArrayLike, base_xyz: ArrayLike) -> MJXState:
+        # Create MJX model
+        model = mjx.put_model(self._mj_model)
+
         # Create blank data
-        data = mjx.make_data(self._mj_model)
+        data = mjx.make_data(model)
 
         # Apply initial q positions
         qpos = data.qpos.at[self._joint_qpos_idx].set(q)
@@ -65,18 +76,18 @@ class MJXPhysics:
         data = data.replace(qpos=qpos)
 
         # Forward dynamics
-        data = mjx.forward(self._mjx_model, data)
+        data = mjx.forward(model, data)
 
-        return PhysicsState(data=data)
+        return MJXState(data=data, model=model)
 
-    def step(self, state: PhysicsState) -> PhysicsState:
-        data = mjx.step(self._mjx_model, state.data)
-        return PhysicsState(data=data)
+    def step(self, state: MJXState) -> MJXState:
+        data = mjx.step(state.model, state.data)
+        return state._replace(data=data)
 
-    def apply_torques(self, state: PhysicsState, tau: ArrayLike) -> PhysicsState:
-        return PhysicsState(data=state.data.replace(ctrl=tau[self._actuator_idx]))
+    def apply_torques(self, state: MJXState, tau: ArrayLike) -> MJXState:
+        return state._replace(data=state.data.replace(ctrl=tau[self._actuator_idx]))
 
-    def get_sensor_data(self, state: PhysicsState) -> SensorData:
+    def get_sensor_data(self, state: MJXState) -> SensorData:
         return SensorData(
             t=self.backend.array(state.data.time),
             q=self.backend.array(state.data.qpos[self._joint_qpos_idx]),
@@ -99,7 +110,31 @@ class MJXPhysics:
             foot_contacts=self._compute_foot_contacts(state),
         )
 
-    def _compute_foot_contacts(self, state: PhysicsState) -> ArrayLike:
+    def set_ground_friction(self, state: MJXState, friction: float) -> MJXState:
+        geom_friction = state.model.geom_friction.at[FLOOR_GEOM_ID, 0].set(friction)
+        return state._replace(model=state.model.replace(geom_friction=geom_friction))
+
+    def add_base_mass(self, state: MJXState, mass: float) -> MJXState:
+        body_mass = state.model.body_mass.at[self._base_body_idx].set(
+            state.model.body_mass[self._base_body_idx] + mass
+        )
+        return state._replace(model=state.model.replace(body_mass=body_mass))
+
+    def scale_masses(self, state: MJXState, scales: ArrayLike) -> MJXState:
+        body_mass = state.model.body_mass.at[1:].set(
+            state.model.body_mass[1:] * scales
+        )  # Skip the worldbody
+        return state._replace(model=state.model.replace(body_mass=body_mass))
+
+    def offset_joints(self, state: MJXState, offsets: ArrayLike) -> MJXState:
+        qpos = state.data.qpos.at[self._joint_qpos_idx].set(
+            state.data.qpos[self._joint_qpos_idx] + offsets
+        )
+        data = state.data.replace(qpos=qpos)
+        data = mjx.forward(state.model, data)
+        return state._replace(data=data)
+
+    def _compute_foot_contacts(self, state: MJXState) -> ArrayLike:
         # Only when distance is negative is there a contact
         active_contacts = state.data.contact.dist < 0  # (233,)
 
@@ -111,7 +146,6 @@ class MJXPhysics:
         )  # (233, n_feet)
 
         # Get mask contacts that involve floor
-        FLOOR_GEOM_ID = 0
         floor_contact_geoms = (state.data.contact.geom[:, 0] == FLOOR_GEOM_ID) | (
             state.data.contact.geom[:, 1] == FLOOR_GEOM_ID
         )  # (233,)

@@ -3,7 +3,7 @@ import numpy as np
 import mujoco
 from mujoco import mjx
 
-from legion.physics.mjx import MJXPhysics, PhysicsState
+from legion.physics.mjx import MJXPhysics, MJXState
 
 
 class MJXRenderer:
@@ -32,7 +32,7 @@ class MJXRenderer:
         self._batch_catmask = mujoco.mjtCatBit.mjCAT_DYNAMIC
         self._max_envs = max_envs
 
-    def render(self, state: PhysicsState) -> np.ndarray:
+    def render(self, state: MJXState) -> np.ndarray:
         # Check if batched or not
         batched = len(state.data.qpos.shape) > 1
         if batched:

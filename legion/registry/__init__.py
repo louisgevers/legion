@@ -8,4 +8,5 @@ from .registry import (
     OBSERVATIONS,
     REWARDS,
     TERMINATIONS,
+    DOMAIN_RANDOMIZATIONS,
 )

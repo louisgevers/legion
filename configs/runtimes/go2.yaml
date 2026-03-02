@@ -102,3 +102,17 @@ metrics:
   - type: joint_velocity_penalty
   - type: joint_acceleration_penalty
   - type: joint_torque_penalty
+
+domain_randomization:
+  - type: ground_friction
+    min: 0.4
+    max: 1.0
+  - type: scale_masses
+    min: 0.9
+    max: 1.1
+  - type: add_base_mass
+    min: 0.0
+    max: 5.0
+  - type: initial_joint_offsets
+    min: -1.00
+    max: 1.00

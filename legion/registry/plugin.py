@@ -16,3 +16,6 @@ def load_all():
     import legion.task.obs
     import legion.task.reward
     import legion.task.termination
+
+    # Domain randomization
+    import legion.domain_randomization.terms

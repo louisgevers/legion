@@ -10,8 +10,10 @@ from legion.registry import (
     REWARDS,
     OBSERVATIONS,
     TERMINATIONS,
+    DOMAIN_RANDOMIZATIONS,
 )
 from legion.task import Task
+from legion.domain_randomization import DomainRandomization
 
 
 def make_runtime(cfg: dict) -> Runtime:
@@ -37,14 +39,18 @@ def make_runtime(cfg: dict) -> Runtime:
 
     # Build signals, observations, rewards, and terminations
     # - depends on backend, embodiment, actuator
-    signals = _build_terms(cfg["signals"], SIGNALS, backend, embodiment, actuator)
-    obs = _build_terms(cfg["observations"], OBSERVATIONS, backend, embodiment, actuator)
-    rew = _build_terms(cfg["rewards"], REWARDS, backend, embodiment, actuator)
-    ter = _build_terms(cfg["terminations"], TERMINATIONS, backend, embodiment, actuator)
+    signals = _build_task_terms(cfg["signals"], SIGNALS, backend, embodiment, actuator)
+    obs = _build_task_terms(
+        cfg["observations"], OBSERVATIONS, backend, embodiment, actuator
+    )
+    rew = _build_task_terms(cfg["rewards"], REWARDS, backend, embodiment, actuator)
+    ter = _build_task_terms(
+        cfg["terminations"], TERMINATIONS, backend, embodiment, actuator
+    )
     metrics = []
     if "metrics" in cfg:
         # Reward terms with weight 1 as metrics
-        metrics = _build_terms(
+        metrics = _build_task_terms(
             cfg["metrics"], REWARDS, backend, embodiment, actuator, weight=1.0
         )
 
@@ -52,12 +58,23 @@ def make_runtime(cfg: dict) -> Runtime:
     # - depends on backend, signals, observations, rewards, and terminations
     task = Task(backend, signals, obs, rew, ter, metrics)
 
+    # Build domain randomization
+    # - depends on backend, physics
+    domain_randomizations = []
+    if "domain_randomization" in cfg:
+        domain_randomizations = _build_domain_randomization_terms(
+            cfg["domain_randomization"], backend, embodiment, physics
+        )
+    domain_randomization = DomainRandomization(backend, domain_randomizations)
+
     # Build runtime
     # - depends on embodiment, physics, actuator, and task
-    return Runtime(embodiment, physics, actuator, task, **cfg["runtime"])
+    return Runtime(
+        embodiment, physics, actuator, task, domain_randomization, **cfg["runtime"]
+    )
 
 
-def _build_terms(
+def _build_task_terms(
     terms: list[dict], registry: dict, backend, embodiment, actuator, **extra_kwargs
 ):
     return [
@@ -68,6 +85,19 @@ def _build_terms(
             embodiment=embodiment,
             actuator=actuator,
             **extra_kwargs,
+        )
+        for term in terms
+    ]
+
+
+def _build_domain_randomization_terms(terms: list[dict], backend, embodiment, physics):
+    return [
+        build(
+            term,
+            DOMAIN_RANDOMIZATIONS,
+            backend=backend,
+            embodiment=embodiment,
+            physics=physics,
         )
         for term in terms
     ]

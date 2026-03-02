@@ -1,4 +1,6 @@
+import copy
 import mujoco
+from typing import NamedTuple
 from numpy.typing import ArrayLike
 
 from legion.backend import get_backend, Backend
@@ -6,7 +8,15 @@ from legion.registry import PHYSICS, register
 from legion.embodiment import Embodiment
 from legion.utils.assets import get_asset_path
 
-from .base import PhysicsState, SensorData
+from .base import SensorData
+
+
+FLOOR_GEOM_ID = 0
+
+
+class MujocoState(NamedTuple):
+    data: mujoco._MjBindData
+    model: mujoco._MjBindModel
 
 
 @register(PHYSICS, "mujoco")
@@ -16,6 +26,9 @@ class MujocoPhysics:
     def __init__(self, embodiment: Embodiment, dt: float, mjcf: str):
         # Lazy load backend
         self.backend = get_backend("numpy")
+
+        # Store embodiment
+        self.embodiment = embodiment
 
         # Load MJCF
         self._mj_model = mujoco.MjModel.from_xml_path(get_asset_path(mjcf))
@@ -45,10 +58,13 @@ class MujocoPhysics:
         self,
         q: ArrayLike,
         base_xyz: ArrayLike,
-    ) -> PhysicsState:
+    ) -> MujocoState:
+        # Copy base model
+        model = copy.deepcopy(self._mj_model)
+
         # Create blank data
-        data = mujoco.MjData(self._mj_model)
-        mujoco.mj_resetData(self._mj_model, data)
+        data = mujoco.MjData(model)
+        mujoco.mj_resetData(model, data)
 
         # Apply initial q positions
         data.qpos[self._joint_qpos_idx] = q
@@ -56,19 +72,19 @@ class MujocoPhysics:
         # Apply initial base positions
         data.qpos[self._base_qpos_idx[:3]] = base_xyz
 
-        return PhysicsState(data=data)
+        return MujocoState(data=data, model=model)
 
-    def step(self, state: PhysicsState) -> PhysicsState:
+    def step(self, state: MujocoState) -> MujocoState:
         # MuJoCo state is mutable
-        mujoco.mj_step(self._mj_model, state.data)
+        mujoco.mj_step(state.model, state.data)
         return state
 
-    def apply_torques(self, state: PhysicsState, tau: ArrayLike) -> PhysicsState:
+    def apply_torques(self, state: MujocoState, tau: ArrayLike) -> MujocoState:
         # MuJoCo state is mutable
         state.data.ctrl[self._actuator_idx] = tau
         return state
 
-    def get_sensor_data(self, state: PhysicsState) -> SensorData:
+    def get_sensor_data(self, state: MujocoState) -> SensorData:
         return SensorData(
             t=self.backend.array(state.data.time),
             q=self.backend.array(state.data.qpos[self._joint_qpos_idx]),
@@ -89,8 +105,29 @@ class MujocoPhysics:
             foot_contacts=self._compute_foot_contacts(state),
         )
 
-    def _compute_foot_contacts(self, state: PhysicsState) -> ArrayLike:
-        FLOOR_GEOM_ID = 0
+    def set_ground_friction(self, state: MujocoState, friction: float) -> MujocoState:
+        # MuJoCo model is directly mutable
+        state.model.geom(FLOOR_GEOM_ID).friction[0] = friction
+        return state
+
+    def add_base_mass(self, state: MujocoState, mass: float) -> MujocoState:
+        # MuJoCo model is directly mutable
+        state.model.body("base").mass += mass
+        return state
+
+    def scale_masses(self, state: MujocoState, scales: ArrayLike) -> MujocoState:
+        # MuJoCo model is directly mutable
+        for i in range(1, state.model.nbody):  # Skip the worldbody
+            state.model.body(i).mass *= scales[i - 1]
+        return state
+
+    def offset_joints(self, state: MujocoState, offsets: ArrayLike) -> MujocoState:
+        # MuJoCo data is directly mutable
+        state.data.qpos[self._joint_qpos_idx] += offsets
+        mujoco.mj_forward(state.model, state.data)
+        return state
+
+    def _compute_foot_contacts(self, state: MujocoState) -> ArrayLike:
         contact_bools = self.backend.zeros(4)
         for i_con in range(state.data.ncon):
             contact = state.data.contact[i_con]

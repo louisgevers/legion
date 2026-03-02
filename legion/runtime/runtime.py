@@ -6,6 +6,7 @@ from legion.embodiment import Embodiment
 from legion.physics import PhysicsState, PhysicsEngine
 from legion.actuator import ActuatorState, Actuator
 from legion.task import TaskState, Task
+from legion.domain_randomization import DomainRandomization
 
 
 class RuntimeState(NamedTuple):
@@ -31,6 +32,7 @@ class Runtime:
         physics: PhysicsEngine,
         actuator: Actuator,
         task: Task,
+        domain_randomization: DomainRandomization,
         actuator_hz: float,
         policy_hz: float,
     ):
@@ -38,6 +40,7 @@ class Runtime:
         self.physics = physics
         self.actuator = actuator
         self.task = task
+        self.domain_randomization = domain_randomization
 
         # Compute static decimations for different control loop frequencies
         physics_hz = int(round(1.0 / physics.dt))
@@ -62,14 +65,20 @@ class Runtime:
         return self.physics.backend
 
     def reset(self, rng: RNGKey) -> RuntimeState:
-        rng, task_rng = self.backend.rng_split(rng, num=2)
+        rng, task_rng, domain_randomization_rng = self.backend.rng_split(rng, num=3)
 
         # Initial robot state
         q_init = self.backend.array(self.embodiment.q_nominal)
         base_xyz_init = self.backend.array(self.embodiment.base_xyz_init)
+        physics_state = self.physics.reset(q=q_init, base_xyz=base_xyz_init)
+
+        # Domain randomization
+        physics_state = self.domain_randomization.apply_reset(
+            physics_state, domain_randomization_rng
+        )
 
         return RuntimeState(
-            physics=self.physics.reset(q=q_init, base_xyz=base_xyz_init),
+            physics=physics_state,
             actuator=self.actuator.reset(),
             task=self.task.reset(task_rng),
             rng=rng,

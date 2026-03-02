@@ -3,7 +3,7 @@ import mujoco
 import mujoco.viewer
 from mujoco import mjx
 
-from legion.physics.mjx import MJXPhysics, PhysicsState
+from legion.physics.mjx import MJXPhysics, MJXState
 
 
 class MJXViewer:
@@ -17,7 +17,7 @@ class MJXViewer:
         # Create the viewer with Mujoco references
         self._mj_viewer = mujoco.viewer.launch_passive(self._mj_model, self._mj_data)
 
-    def render(self, state: PhysicsState):
+    def render(self, state: MJXState):
         # Only use the state at the right index
         state_to_use = self._select_env(state)
 
@@ -34,7 +34,7 @@ class MJXViewer:
     def close(self):
         self._mj_viewer.close()
 
-    def _select_env(self, state: PhysicsState):
+    def _select_env(self, state: MJXState):
         # Check if state is batched, if so pick the desired indexed one
         batched = len(state.data.qpos.shape) > 1
         if not batched:

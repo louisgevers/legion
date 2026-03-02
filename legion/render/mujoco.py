@@ -1,7 +1,7 @@
 import numpy as np
 import mujoco
 
-from legion.physics.mujoco import MujocoPhysics, PhysicsState
+from legion.physics.mujoco import MujocoPhysics, MujocoState
 
 
 class MujocoRenderer:
@@ -18,7 +18,7 @@ class MujocoRenderer:
         self._camera = camera
         self._options = mujoco.MjvOption()
 
-    def render(self, state: PhysicsState) -> np.ndarray:
+    def render(self, state: MujocoState) -> np.ndarray:
         self._mj_renderer.update_scene(state.data, self._camera, self._options)
         return self._mj_renderer.render()
 

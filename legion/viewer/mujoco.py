@@ -1,7 +1,7 @@
 import mujoco
 import mujoco.viewer
 
-from legion.physics.mujoco import MujocoPhysics, PhysicsState
+from legion.physics.mujoco import MujocoPhysics, MujocoState
 
 
 class MujocoViewer:
@@ -10,7 +10,7 @@ class MujocoViewer:
         self._mj_data = mujoco.MjData(self._mj_model)  # Internal data handle
         self._mj_viewer = mujoco.viewer.launch_passive(self._mj_model, self._mj_data)
 
-    def render(self, state: PhysicsState):
+    def render(self, state: MujocoState):
         # Copy into internal data
         mujoco.mj_copyState(
             self._mj_model,

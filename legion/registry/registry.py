@@ -6,6 +6,7 @@ SIGNALS: dict[str, type] = {}
 REWARDS: dict[str, type] = {}
 OBSERVATIONS: dict[str, type] = {}
 TERMINATIONS: dict[str, type] = {}
+DOMAIN_RANDOMIZATIONS: dict[str, type] = {}
 
 
 def register(registry: dict[str, type], name: str):
