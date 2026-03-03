@@ -6,13 +6,14 @@ from legion.embodiment import Embodiment
 from legion.physics import PhysicsState, PhysicsEngine
 from legion.actuator import ActuatorState, Actuator
 from legion.task import TaskState, Task
-from legion.domain_randomization import DomainRandomization
+from legion.domain_randomization import DomainRandomizationState, DomainRandomization
 
 
 class RuntimeState(NamedTuple):
     physics: PhysicsState
     actuator: ActuatorState
     task: TaskState
+    domain_randomization: DomainRandomizationState
     rng: RNGKey
 
 
@@ -65,7 +66,7 @@ class Runtime:
         return self.physics.backend
 
     def reset(self, rng: RNGKey) -> RuntimeState:
-        rng, task_rng, domain_randomization_rng = self.backend.rng_split(rng, num=3)
+        rng, task_rng, dr_rng, dr_apply_rng = self.backend.rng_split(rng, num=4)
 
         # Initial robot state
         q_init = self.backend.array(self.embodiment.q_nominal)
@@ -73,24 +74,32 @@ class Runtime:
         physics_state = self.physics.reset(q=q_init, base_xyz=base_xyz_init)
 
         # Domain randomization
+        domain_randomization_state = self.domain_randomization.reset(dr_rng)
         physics_state = self.domain_randomization.apply_reset(
-            physics_state, domain_randomization_rng
+            domain_randomization_state, physics_state, dr_apply_rng
         )
 
         return RuntimeState(
             physics=physics_state,
             actuator=self.actuator.reset(),
             task=self.task.reset(task_rng),
+            domain_randomization=domain_randomization_state,
             rng=rng,
         )
 
     def step(self, state: RuntimeState, action: ArrayLike) -> RuntimeTransition:
         # Generate new keys
-        rng, task_rng = self.backend.rng_split(state.rng, num=2)
+        rng, task_rng, dr_rng, dr_apply_rng = self.backend.rng_split(state.rng, num=4)
+
+        # Apply domain randomization
+        sensor_data = self.physics.get_sensor_data(state.physics)
+        physics_state = self.domain_randomization.apply_step(
+            state.domain_randomization, state.physics, sensor_data, dr_apply_rng
+        )
 
         # Apply action (steps actuator and physics at different frequencies, collects final states)
         physics_state, actuator_state = self._step_action(
-            state.physics,
+            physics_state,
             state.actuator,
             action,
             n=self._policy_decimation,  # Runs physics for policy_decimation steps
@@ -123,11 +132,17 @@ class Runtime:
             state.task, sensor_data, action, self._policy_dt, task_rng
         )
 
+        # Update domain randomization state for next step
+        domain_randomization_state = self.domain_randomization.step(
+            state.domain_randomization, sensor_data, dr_rng
+        )
+
         return RuntimeTransition(
             state=RuntimeState(
                 physics=physics_state,
                 actuator=actuator_state,
                 task=task_state,
+                domain_randomization=domain_randomization_state,
                 rng=rng,
             ),
             obs=obs,

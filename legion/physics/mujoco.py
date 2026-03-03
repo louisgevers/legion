@@ -50,6 +50,9 @@ class MujocoPhysics:
         # Load foot geom ids for contact detection
         self._foot_geom_ids = mj_foot_geom_ids(self._mj_model, embodiment, self.backend)
 
+        # Load base body index
+        self._base_body_idx = self._mj_model.body("base").id
+
     @property
     def dt(self) -> float:
         return self._mj_model.opt.timestep
@@ -125,6 +128,13 @@ class MujocoPhysics:
         # MuJoCo data is directly mutable
         state.data.qpos[self._joint_qpos_idx] += offsets
         mujoco.mj_forward(state.model, state.data)
+        return state
+
+    def apply_base_perturbation(
+        self, state: MujocoState, force: ArrayLike
+    ) -> MujocoState:
+        # MuJoCo data is directly mutable
+        state.data.xfrc_applied[self._base_body_idx, :3] = force
         return state
 
     def _compute_foot_contacts(self, state: MujocoState) -> ArrayLike:

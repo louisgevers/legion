@@ -11,6 +11,9 @@ class JaxBackend:
         # Required for Ampere architectures (e.g., RTX30 and RTX40) or NaNs start showing up
         jax.config.update("jax_default_matmul_precision", "highest")
 
+    # constants
+    pi = jnp.pi
+
     # array ops
     array = staticmethod(jnp.array)
     zeros = staticmethod(jnp.zeros)

@@ -5,6 +5,9 @@ from scipy.spatial.transform import Rotation
 class NumpyBackend:
     name = "numpy"
 
+    # constants
+    pi = np.pi
+
     # array ops
     array = staticmethod(np.array)
     zeros = staticmethod(np.zeros)

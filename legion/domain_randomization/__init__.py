@@ -1,1 +1,1 @@
-from .base import DomainRandomization
+from .base import DomainRandomization, DomainRandomizationState

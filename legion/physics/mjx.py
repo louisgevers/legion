@@ -134,6 +134,10 @@ class MJXPhysics:
         data = mjx.forward(state.model, data)
         return state._replace(data=data)
 
+    def apply_base_perturbation(self, state: MJXState, force: ArrayLike) -> MJXState:
+        xfrc_applied = state.data.xfrc_applied.at[self._base_body_idx, :3].set(force)
+        return state._replace(data=state.data.replace(xfrc_applied=xfrc_applied))
+
     def _compute_foot_contacts(self, state: MJXState) -> ArrayLike:
         # Only when distance is negative is there a contact
         active_contacts = state.data.contact.dist < 0  # (233,)

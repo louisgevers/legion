@@ -55,3 +55,6 @@ class PhysicsEngine(Protocol):
     def offset_joints(
         self, state: PhysicsState, offsets: ArrayLike
     ) -> PhysicsState: ...
+    def apply_base_perturbation(
+        self, state: PhysicsState, force: ArrayLike
+    ) -> PhysicsState: ...

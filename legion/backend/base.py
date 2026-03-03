@@ -7,6 +7,9 @@ RNGKey = ArrayLike
 class Backend(Protocol):
     name: str
 
+    # constants
+    pi: float
+
     # array ops
     def array(self, x): ...
     def zeros(self, shape): ...

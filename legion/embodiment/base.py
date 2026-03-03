@@ -11,3 +11,4 @@ class Embodiment(Protocol):
     feet_names: tuple[str, ...]
     q_nominal: tuple[float, ...]
     base_xyz_init: tuple[float, float, float]
+    total_mass: float
