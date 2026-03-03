@@ -371,7 +371,7 @@ class FeetAirTimeReward:
         actuator: Actuator,
         weight: float,
         min_time: float,
-        min_cmd_amplitude: float = 0.01,
+        min_cmd_amplitude: float = 0.1,
     ):
         self.backend = backend
         self.weight = weight
