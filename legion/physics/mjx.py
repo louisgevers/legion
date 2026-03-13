@@ -55,6 +55,9 @@ class MJXPhysics:
         # Load base body index
         self._base_body_idx = self._mj_model.body("base").id
 
+        # Store q_directions
+        self.q_dir = self.backend.array(embodiment.q_directions)
+
     @property
     def dt(self) -> float:
         return self._mj_model.opt.timestep
@@ -67,7 +70,7 @@ class MJXPhysics:
         data = mjx.make_data(model)
 
         # Apply initial q positions
-        qpos = data.qpos.at[self._joint_qpos_idx].set(q)
+        qpos = data.qpos.at[self._joint_qpos_idx].set(q * self.q_dir)
 
         # Apply initial base positions
         qpos = qpos.at[self._base_qpos_idx[:3]].set(base_xyz)
@@ -85,15 +88,18 @@ class MJXPhysics:
         return state._replace(data=data)
 
     def apply_torques(self, state: MJXState, tau: ArrayLike) -> MJXState:
-        return state._replace(data=state.data.replace(ctrl=tau[self._actuator_idx]))
+        return state._replace(
+            data=state.data.replace(ctrl=tau[self._actuator_idx] * self.q_dir)
+        )
 
     def get_sensor_data(self, state: MJXState) -> SensorData:
         return SensorData(
             t=self.backend.array(state.data.time),
-            q=self.backend.array(state.data.qpos[self._joint_qpos_idx]),
-            dq=self.backend.array(state.data.qvel[self._joint_qvel_idx]),
-            ddq=self.backend.array(state.data.qacc[self._joint_qvel_idx]),
-            tau=self.backend.array(state.data.actuator_force[self._actuator_idx]),
+            q=self.backend.array(state.data.qpos[self._joint_qpos_idx]) * self.q_dir,
+            dq=self.backend.array(state.data.qvel[self._joint_qvel_idx]) * self.q_dir,
+            ddq=self.backend.array(state.data.qacc[self._joint_qvel_idx]) * self.q_dir,
+            tau=self.backend.array(state.data.actuator_force[self._actuator_idx])
+            * self.q_dir,
             base_xyz=self.backend.array(state.data.qpos[self._base_qpos_idx][:3]),
             base_quat=self.backend.roll(
                 state.data.qpos[self._base_qpos_idx][3:], -1
@@ -128,7 +134,7 @@ class MJXPhysics:
 
     def offset_joints(self, state: MJXState, offsets: ArrayLike) -> MJXState:
         qpos = state.data.qpos.at[self._joint_qpos_idx].set(
-            state.data.qpos[self._joint_qpos_idx] + offsets
+            state.data.qpos[self._joint_qpos_idx] + offsets * self.q_dir
         )
         data = state.data.replace(qpos=qpos)
         data = mjx.forward(state.model, data)

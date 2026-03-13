@@ -70,7 +70,7 @@ class MujocoPhysics:
         mujoco.mj_resetData(model, data)
 
         # Apply initial q positions
-        data.qpos[self._joint_qpos_idx] = q
+        data.qpos[self._joint_qpos_idx] = q * self.embodiment.q_directions
 
         # Apply initial base positions
         data.qpos[self._base_qpos_idx[:3]] = base_xyz
@@ -84,16 +84,20 @@ class MujocoPhysics:
 
     def apply_torques(self, state: MujocoState, tau: ArrayLike) -> MujocoState:
         # MuJoCo state is mutable
-        state.data.ctrl[self._actuator_idx] = tau
+        state.data.ctrl[self._actuator_idx] = tau * self.embodiment.q_directions
         return state
 
     def get_sensor_data(self, state: MujocoState) -> SensorData:
         return SensorData(
             t=self.backend.array(state.data.time),
-            q=self.backend.array(state.data.qpos[self._joint_qpos_idx]),
-            dq=self.backend.array(state.data.qvel[self._joint_qvel_idx]),
-            ddq=self.backend.array(state.data.qacc[self._joint_qvel_idx]),
-            tau=self.backend.array(state.data.actuator_force[self._actuator_idx]),
+            q=self.backend.array(state.data.qpos[self._joint_qpos_idx])
+            * self.embodiment.q_directions,
+            dq=self.backend.array(state.data.qvel[self._joint_qvel_idx])
+            * self.embodiment.q_directions,
+            ddq=self.backend.array(state.data.qacc[self._joint_qvel_idx])
+            * self.embodiment.q_directions,
+            tau=self.backend.array(state.data.actuator_force[self._actuator_idx])
+            * self.embodiment.q_directions,
             base_xyz=self.backend.array(state.data.qpos[self._base_qpos_idx][:3]),
             base_quat=self.backend.roll(
                 state.data.qpos[self._base_qpos_idx][3:], -1
@@ -126,7 +130,7 @@ class MujocoPhysics:
 
     def offset_joints(self, state: MujocoState, offsets: ArrayLike) -> MujocoState:
         # MuJoCo data is directly mutable
-        state.data.qpos[self._joint_qpos_idx] += offsets
+        state.data.qpos[self._joint_qpos_idx] += offsets * self.embodiment.q_directions
         mujoco.mj_forward(state.model, state.data)
         return state
 
