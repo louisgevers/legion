@@ -174,9 +174,11 @@ class Runtime:
     ) -> tuple[tuple[PhysicsState, ActuatorState, ArrayLike], None]:
         physics_state, actuator_state, action = carry
 
-        # Collect sensor data and compute torques
+        # Collect sensor data
         sensor_data = self.physics.get_sensor_data(physics_state)
-        tau = self.actuator.tau(action, sensor_data, actuator_state)
+
+        # Compute torque (use copy of the action to avoid accidental inplace edits)
+        tau = self.actuator.tau(action.copy(), sensor_data, actuator_state)
 
         # Advance simulation at actuator frequency
         physics_state = self._step_physics(
