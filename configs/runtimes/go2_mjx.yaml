@@ -2,5 +2,5 @@ extends: go2
 
 physics:
   type: mjx
-  mjcf: assets/mjx/go2.mjcf
+  mjcf: assets/mjx/go2_flat_terrain.mjcf
   dt: 0.005

@@ -1,5 +1,5 @@
 <mujoco model="go2">
-    <compiler angle="radian" meshdir="../meshes/go2" autolimits="true" />
+    <compiler angle="radian" meshdir="../meshes" autolimits="true" />
 
 
     <default>
@@ -45,29 +45,26 @@
         <material name="white" rgba="1 1 1 1" />
         <material name="gray" rgba="0.671705 0.692426 0.774270 1" />
 
-        <mesh file="base_0.obj" />
-        <mesh file="base_1.obj" />
-        <mesh file="base_2.obj" />
-        <mesh file="base_3.obj" />
-        <mesh file="base_4.obj" />
-        <mesh file="hip_0.obj" />
-        <mesh file="hip_1.obj" />
-        <mesh file="thigh_0.obj" />
-        <mesh file="thigh_1.obj" />
-        <mesh file="thigh_mirror_0.obj" />
-        <mesh file="thigh_mirror_1.obj" />
-        <mesh file="calf_0.obj" />
-        <mesh file="calf_1.obj" />
-        <mesh file="calf_mirror_0.obj" />
-        <mesh file="calf_mirror_1.obj" />
-        <mesh file="foot.obj" />
-
-        <model name="scene" file="scene.mjcf" content_type="text/xml" />
+        <mesh file="go2/base_0.obj" />
+        <mesh file="go2/base_1.obj" />
+        <mesh file="go2/base_2.obj" />
+        <mesh file="go2/base_3.obj" />
+        <mesh file="go2/base_4.obj" />
+        <mesh file="go2/hip_0.obj" />
+        <mesh file="go2/hip_1.obj" />
+        <mesh file="go2/thigh_0.obj" />
+        <mesh file="go2/thigh_1.obj" />
+        <mesh file="go2/thigh_mirror_0.obj" />
+        <mesh file="go2/thigh_mirror_1.obj" />
+        <mesh file="go2/calf_0.obj" />
+        <mesh file="go2/calf_1.obj" />
+        <mesh file="go2/calf_mirror_0.obj" />
+        <mesh file="go2/calf_mirror_1.obj" />
+        <mesh file="go2/foot.obj" />
     </asset>
 
 
     <worldbody>
-        <attach model="scene" prefix="scene" />
         <light name="spotlight" mode="targetbodycom" target="base" pos="2 -2 4" range="100" diffuse="0.5 0.5 0.5" />
         <body name="base" pos="0 0 0.445" childclass="go2">
             <camera name="track" mode="trackcom" pos="1.509 -1.659 1.214" xyaxes="0.723 0.691 -0.000 -0.389 0.407 0.826" />

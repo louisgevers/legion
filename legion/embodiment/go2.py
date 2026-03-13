@@ -25,5 +25,5 @@ class Go2(NamedTuple):
     )
     feet_names: tuple[str, ...] = ("FL", "FR", "RL", "RR")
     q_nominal: tuple[float, ...] = (0.0, 0.8, -1.5) * 2 + (0.0, 1.0, -1.5) * 2
-    base_xyz_init: tuple[float, float, float] = (0.0, 0.0, 0.34)
+    base_xyz_init: tuple[float, float, float] = (0.0, 0.0, 0.38)
     total_mass: float = 15.0

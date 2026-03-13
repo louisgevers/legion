@@ -3,7 +3,7 @@ embodiment:
 
 physics:
   type: mujoco
-  mjcf: assets/mujoco/go2.mjcf
+  mjcf: assets/mujoco/go2_flat_terrain.mjcf
   dt: 0.005
 
 runtime:

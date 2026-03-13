@@ -1,0 +1,19 @@
+<mujoco model="scene">
+    <compiler angle="radian" meshdir="../meshes" />
+    <asset>
+        <texture builtin="gradient" height="100" rgb1="1 1 1" rgb2="0 0 0" type="skybox" width="100"/>
+        <texture name="texfloor" type="2d" builtin="checker" mark="none" rgb1="0.9 0.9 0.9" rgb2="1.0 1.0 1.0" width="512" height="512" />
+        <material name="matfloor" emission="0.1" reflectance="0.0" shininess="0" specular="0" texrepeat="100 100" texture="texfloor" />
+        <hfield name="hfield" file="hfields/rugged_terrain.png" size="10 10 .05 1.0"/>
+    </asset>
+
+    <visual>
+        <quality shadowsize="8192"/>
+    </visual>
+
+    <include file="go2.mjcf" />
+
+    <worldbody>
+        <geom name="floor" pos="0 0 0" type="hfield" hfield="hfield" size="40 40 1" material="matfloor" />
+    </worldbody>
+</mujoco>
