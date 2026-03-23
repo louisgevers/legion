@@ -78,7 +78,7 @@ class ScaleMassesRandomization(DomainRandomizationTerm):
         super().__init__(backend, embodiment, physics)
         self.min = min
         self.max = max
-        self.n_links = embodiment.n_joints + 1  # legs + base
+        self.n_links = embodiment.n_links
 
     def apply_reset(self, state: dict, physics_state: PhysicsState, rng: RNGKey):
         scales = self.backend.rng_uniform(
