@@ -1,4 +1,4 @@
-from typing import Protocol
+from typing import Protocol, Literal
 from numpy.typing import ArrayLike
 
 from legion.registry import OBSERVATIONS, register
@@ -134,14 +134,28 @@ class BaseLinearVelocityObs:
     name = "base_linear_vel"
     required_signals = ()
 
-    def __init__(self, backend: Backend, embodiment: Embodiment, actuator: Actuator):
+    def __init__(
+        self,
+        backend: Backend,
+        embodiment: Embodiment,
+        actuator: Actuator,
+        frame: Literal["local", "global"] = "local",
+    ):
         self.backend = backend
         self.size = 3
+
+        # Different function depending on frame (determine before JIT)
+        self.linear_velocity_fn = {
+            "local": lambda sensor_data: sensor_data.local_base_linear_vel(
+                self.backend
+            ),
+            "global": lambda sensor_data: sensor_data.base_linear_vel,
+        }[frame]
 
     def __call__(
         self, signals: tuple[ArrayLike, ...], sensor_data: SensorData
     ) -> ArrayLike:
-        return sensor_data.local_base_linear_vel(self.backend)
+        return self.linear_velocity_fn(sensor_data)
 
 
 @register(OBSERVATIONS, "base_angular_vel")

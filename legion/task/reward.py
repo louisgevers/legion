@@ -1,4 +1,4 @@
-from typing import Protocol
+from typing import Protocol, Literal
 from numpy.typing import ArrayLike
 
 from legion.registry import REWARDS, register
@@ -43,11 +43,20 @@ class LinearVelocityTrackingReward:
         weight: float,
         sensitivity: float,
         size: int = 2,  # 1 for x only, 2 for xy
+        frame: Literal["local", "global"] = "local",
     ):
         self.backend = backend
         self.weight = weight
         self.sensitivity = sensitivity
         self.size = size
+
+        # Different function depending on frame (determine before JIT)
+        self.linear_velocity_fn = {
+            "local": lambda sensor_data: sensor_data.local_base_linear_vel(
+                self.backend
+            ),
+            "global": lambda sensor_data: sensor_data.base_linear_vel,
+        }[frame]
 
     def __call__(
         self,
@@ -56,7 +65,7 @@ class LinearVelocityTrackingReward:
         action: ArrayLike,
     ):
         cmd = signals[0][: self.size]
-        actual = sensor_data.local_base_linear_vel(self.backend)[:2]  # vx, vy
+        actual = self.linear_velocity_fn(sensor_data)[:2]  # vx, vy
         error = self.backend.sum(self.backend.square(actual - cmd))
         return self.backend.exp(-error / self.sensitivity)
 
