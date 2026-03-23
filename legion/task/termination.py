@@ -78,6 +78,25 @@ class FallTermination:
         )
 
 
+@register(TERMINATIONS, "contacts")
+class ContactsTermination:
+    name = "contacts"
+    required_signals = ()
+
+    def __init__(
+        self,
+        backend: Backend,
+        embodiment: Embodiment,
+        actuator: Actuator,
+    ):
+        self.backend = backend
+
+    def __call__(self, signals: ArrayLike, sensor_data: SensorData):
+        return (
+            sensor_data.n_contacts - self.backend.sum(sensor_data.foot_contacts)
+        ) > 0  # Any non-foot contacts
+
+
 @register(TERMINATIONS, "timeout")
 class TimeoutTermination:
     name = "timeout"
