@@ -42,10 +42,12 @@ class LinearVelocityTrackingReward:
         actuator: Actuator,
         weight: float,
         sensitivity: float,
+        size: int = 2,  # 1 for x only, 2 for xy
     ):
         self.backend = backend
         self.weight = weight
         self.sensitivity = sensitivity
+        self.size = size
 
     def __call__(
         self,
@@ -53,7 +55,7 @@ class LinearVelocityTrackingReward:
         sensor_data: SensorData,
         action: ArrayLike,
     ):
-        cmd = signals[0][:2]
+        cmd = signals[0][: self.size]
         actual = sensor_data.local_base_linear_vel(self.backend)[:2]  # vx, vy
         error = self.backend.sum(self.backend.square(actual - cmd))
         return self.backend.exp(-error / self.sensitivity)

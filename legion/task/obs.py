@@ -47,15 +47,20 @@ class PrevActionObs:
 class LinearVelocityCommandObs:
     name = "linear_velocity_command"
     required_signals = ("linear_velocity_command",)
-    size = 2
 
-    def __init__(self, backend: Backend, embodiment: Embodiment, actuator: Actuator):
-        pass
+    def __init__(
+        self,
+        backend: Backend,
+        embodiment: Embodiment,
+        actuator: Actuator,
+        size: int = 2,  # 1 for x only, 2 for xy
+    ):
+        self.size = size
 
     def __call__(
         self, signals: tuple[ArrayLike, ...], sensor_data: SensorData
     ) -> ArrayLike:
-        vel_cmd = signals[0][:2]
+        vel_cmd = signals[0][: self.size]
         return vel_cmd
 
 
