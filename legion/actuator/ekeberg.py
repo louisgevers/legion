@@ -20,10 +20,15 @@ class EkebergActuator:
         gamma: float,
         delta: float,
         control_mode: Literal["individual", "antagonist"] = "individual",
+        theta_ref: tuple[float] | None = None,
     ):
         self.backend = backend
         self.n_u = embodiment.n_actuators * 2
-        self.theta_ref = backend.array(embodiment.q_nominal)
+        self.theta_ref = (
+            backend.array(embodiment.q_nominal)
+            if theta_ref is None
+            else self.backend.array(theta_ref)
+        )
         self.alpha = alpha
         self.beta = beta
         self.gamma = gamma
