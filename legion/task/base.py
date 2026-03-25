@@ -13,6 +13,7 @@ from .signals import Signal
 from .obs import ObsTerm
 from .reward import RewardTerm
 from .termination import TerminationTerm
+from .metrics import MetricsTerm
 
 
 class TaskState(NamedTuple):
@@ -28,7 +29,9 @@ class Task:
         observations: list[ObsTerm],
         rewards: list[RewardTerm],
         terminations: list[TerminationTerm],
-        metrics: list[RewardTerm] = [],  # Optional unweighted rewards as metrics
+        metrics: list[
+            MetricsTerm | RewardTerm
+        ] = [],  # Optional unweighted rewards as metrics
     ):
         self.backend = backend
 

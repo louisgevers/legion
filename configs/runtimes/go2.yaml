@@ -108,6 +108,9 @@ metrics:
   - type: joint_velocity_penalty
   - type: joint_acceleration_penalty
   - type: joint_torque_penalty
+  - type: energy
+  - type: distance_x
+  - type: distance_y
 
 domain_randomization:
   - type: ground_friction

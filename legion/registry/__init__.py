@@ -13,5 +13,6 @@ from .registry import (
     OBSERVATIONS,
     REWARDS,
     TERMINATIONS,
+    METRICS,
     DOMAIN_RANDOMIZATIONS,
 )

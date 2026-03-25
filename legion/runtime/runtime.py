@@ -120,7 +120,6 @@ class Runtime:
 
         # Scale reward with timestep
         reward = reward * self._policy_dt
-        metrics_reward = {k: v * self._policy_dt for k, v in metrics_reward.items()}
 
         # If terminated early, set reward to 0
         reward = self.backend.where(done, 0, reward)
@@ -131,6 +130,9 @@ class Runtime:
         # Collect additional metrics
         metrics = self.task.get_metrics(state.task, sensor_data, action)
         all_metrics = metrics_reward | metrics
+
+        # Scale metrics with timestep
+        all_metrics = {k: v * self._policy_dt for k, v in all_metrics.items()}
 
         # Update signals for next step (AFTER the transition)
         task_state = self.task.step(

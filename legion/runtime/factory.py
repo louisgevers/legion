@@ -15,6 +15,7 @@ from legion.registry import (
     REWARDS,
     OBSERVATIONS,
     TERMINATIONS,
+    METRICS,
     DOMAIN_RANDOMIZATIONS,
 )
 from legion.task import Task
@@ -54,10 +55,18 @@ def make_runtime(cfg: dict) -> Runtime:
     )
     metrics = []
     if "metrics" in cfg:
+        metric_terms = [term for term in cfg["metrics"] if term["type"] in METRICS]
+        reward_terms = [term for term in cfg["metrics"] if term["type"] in REWARDS]
         # Reward terms with weight 1 as metrics
         metrics = _build_task_terms(
-            cfg["metrics"], REWARDS, backend, embodiment, actuator, weight=1.0
-        )
+            reward_terms, REWARDS, backend, embodiment, actuator, weight=1.0
+        ) + _build_task_terms(metric_terms, METRICS, backend, embodiment, actuator)
+
+        # Check if there are any unknown metrics
+        for term in cfg["metrics"]:
+            term_type = term["type"]
+            if term_type not in METRICS and term_type not in REWARDS:
+                raise ValueError(f"Unknown metric or reward term: '{term_type}'")
 
     # Build task
     # - depends on backend, signals, observations, rewards, and terminations

@@ -12,6 +12,7 @@ SIGNALS: dict[str, type] = {}
 REWARDS: dict[str, type] = {}
 OBSERVATIONS: dict[str, type] = {}
 TERMINATIONS: dict[str, type] = {}
+METRICS: dict[str, type] = {}
 DOMAIN_RANDOMIZATIONS: dict[str, type] = {}
 
 
