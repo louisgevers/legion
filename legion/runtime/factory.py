@@ -44,15 +44,30 @@ def make_runtime(cfg: dict) -> Runtime:
     )
 
     # Build signals, observations, rewards, and terminations
+    # Each of these are optional (e.g., just want the physics engine)
     # - depends on backend, embodiment, actuator
-    signals = _build_task_terms(cfg["signals"], SIGNALS, backend, embodiment, actuator)
-    obs = _build_task_terms(
-        cfg["observations"], OBSERVATIONS, backend, embodiment, actuator
-    )
-    rew = _build_task_terms(cfg["rewards"], REWARDS, backend, embodiment, actuator)
-    ter = _build_task_terms(
-        cfg["terminations"], TERMINATIONS, backend, embodiment, actuator
-    )
+    signals = []
+    if "signals" in cfg:
+        signals = _build_task_terms(
+            cfg["signals"], SIGNALS, backend, embodiment, actuator
+        )
+
+    obs = []
+    if "observations" in cfg:
+        obs = _build_task_terms(
+            cfg["observations"], OBSERVATIONS, backend, embodiment, actuator
+        )
+
+    rew = []
+    if "rewards" in cfg:
+        rew = _build_task_terms(cfg["rewards"], REWARDS, backend, embodiment, actuator)
+
+    ter = []
+    if "terminations" in cfg:
+        ter = _build_task_terms(
+            cfg["terminations"], TERMINATIONS, backend, embodiment, actuator
+        )
+
     metrics = []
     if "metrics" in cfg:
         metric_terms = [term for term in cfg["metrics"] if term["type"] in METRICS]

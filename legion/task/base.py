@@ -99,6 +99,8 @@ class Task:
         observations = tuple(
             obs(signal, sensor_data) for obs, signal in zip(self.observations, signals)
         )
+        if len(observations) == 0:
+            return self.backend.zeros((0,))
         return self.backend.concatenate(observations)
 
     def reward(
