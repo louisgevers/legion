@@ -4,6 +4,9 @@
 # See LICENSE file for full license information.
 #
 from typing import Protocol
+from numpy.typing import ArrayLike
+
+from legion.backend import Backend
 
 
 class Embodiment(Protocol):
@@ -19,3 +22,5 @@ class Embodiment(Protocol):
     q_directions: tuple[float, ...]
     base_xyz_init: tuple[float, float, float]
     total_mass: float
+
+    def leg_ik(self, backend: Backend, xyz: ArrayLike) -> ArrayLike: ...
