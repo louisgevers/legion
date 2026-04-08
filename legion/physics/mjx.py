@@ -119,6 +119,7 @@ class MJXPhysics:
                 state.data.contact.dist < 0
             ),  # Only when distance is negative is there a contact
             foot_contacts=self._compute_foot_contacts(state),
+            foot_normal_forces=self._compute_foot_normal_forces(state),
         )
 
     def set_ground_friction(self, state: MJXState, friction: float) -> MJXState:
@@ -174,3 +175,30 @@ class MJXPhysics:
         )  # (n_feet,)
 
         return foot_in_contact
+
+    def _compute_foot_normal_forces(self, state: MJXState) -> ArrayLike:
+        # Only when distance is negative is there a contact
+        active_contacts = state.data.contact.dist < 0  # (233,)
+
+        # Get mask contacts that involve foot geoms
+        foot_contact_geoms = (
+            state.data.contact.geom[:, None, 0] == self._foot_geom_ids[None, :]
+        ) | (
+            state.data.contact.geom[:, None, 1] == self._foot_geom_ids[None, :]
+        )  # (233, n_feet)
+
+        # Get mask contacts that involve floor
+        floor_contact_geoms = (state.data.contact.geom[:, 0] == FLOOR_GEOM_ID) | (
+            state.data.contact.geom[:, 1] == FLOOR_GEOM_ID
+        )  # (233,)
+
+        # Build per-contact mask: active & floor & foot
+        mask = (
+            active_contacts[:, None] & foot_contact_geoms & floor_contact_geoms[:, None]
+        )  # (233, n_feet)
+
+        # efc_address maps each contact to its normal-force row in efc_force
+        normal_forces = state.data.efc_force[state.data.contact.efc_address]  # (233,)
+
+        # Sum normal forces per foot
+        return self.backend.sum(normal_forces[:, None] * mask, axis=0)

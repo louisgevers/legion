@@ -115,6 +115,7 @@ class MujocoPhysics:
             ),
             n_contacts=state.data.ncon,
             foot_contacts=self._compute_foot_contacts(state),
+            foot_normal_forces=self._compute_foot_normal_forces(state),
         )
 
     def set_ground_friction(self, state: MujocoState, friction: float) -> MujocoState:
@@ -147,7 +148,7 @@ class MujocoPhysics:
         return state
 
     def _compute_foot_contacts(self, state: MujocoState) -> ArrayLike:
-        contact_bools = self.backend.zeros(4)
+        contact_bools = self.backend.zeros(self.embodiment.n_feet)
         for i_con in range(state.data.ncon):
             contact = state.data.contact[i_con]
             for foot_i, foot_id in enumerate(self._foot_geom_ids):
@@ -158,6 +159,22 @@ class MujocoPhysics:
                     contact_bools[foot_i] = 1
                     break
         return contact_bools
+
+    def _compute_foot_normal_forces(self, state: MujocoState) -> ArrayLike:
+        forces = self.backend.zeros(self.embodiment.n_feet)
+        result = self.backend.zeros(6)  # To store contact forces from mujoco
+        for i_con in range(state.data.ncon):
+            contact = state.data.contact[i_con]
+            for foot_i, foot_id in enumerate(self._foot_geom_ids):
+                # If contact with the floor
+                if (contact.geom1 == foot_id and contact.geom2 == FLOOR_GEOM_ID) or (
+                    contact.geom2 == foot_id and contact.geom1 == FLOOR_GEOM_ID
+                ):
+                    mujoco.mj_contactForce(state.model, state.data, i_con, result)
+                    forces[foot_i] += result[
+                        0
+                    ]  # result[0] is normal force in contact frame
+        return forces
 
 
 def mj_base_indices(
