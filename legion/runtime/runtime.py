@@ -8,7 +8,7 @@ from numpy.typing import ArrayLike
 
 from legion.backend import Backend, RNGKey
 from legion.embodiment import Embodiment
-from legion.physics import PhysicsState, PhysicsEngine
+from legion.physics import PhysicsState, PhysicsEngine, SensorData
 from legion.actuator import ActuatorState, Actuator
 from legion.task import TaskState, Task
 from legion.domain_randomization import DomainRandomizationState, DomainRandomization
@@ -163,6 +163,9 @@ class Runtime:
         sensor_data = self.physics.get_sensor_data(state.physics)
         obs = self.task.observe(state.task, sensor_data)
         return obs
+
+    def get_sensor_data(self, state: RuntimeState) -> SensorData:
+        return self.physics.get_sensor_data(state.physics)
 
     # --- scannable functions --
     def _physics_step_fn(
