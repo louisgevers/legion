@@ -44,7 +44,7 @@ class EkebergActuator:
             "antagonist": u_diff_sum_antagonist,
         }[control_mode]
 
-    def reset(self, rng: RNGKey) -> ActuatorState:
+    def reset(self, rng: RNGKey, dt: float) -> ActuatorState:
         # No state
         return ActuatorState()
 

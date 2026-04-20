@@ -26,7 +26,7 @@ class TorqueActuator:
         # No state
         return ActuatorState()
 
-    def step(self, state: ActuatorState) -> ActuatorState:
+    def step(self, state: ActuatorState, dt: float) -> ActuatorState:
         # No state
         return state
 

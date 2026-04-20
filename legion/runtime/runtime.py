@@ -64,6 +64,8 @@ class Runtime:
 
         # Policy timestep for scaling
         self._policy_dt = 1 / policy_hz
+        # Actuator timestep for scaling
+        self._actuator_dt = 1 / actuator_hz
 
     # Useful hook for users
     @property
@@ -198,7 +200,7 @@ class Runtime:
         )
 
         # Step the actuator
-        actuator_state = self.actuator.step(actuator_state)
+        actuator_state = self.actuator.step(actuator_state, self._actuator_dt)
 
         return (physics_state, actuator_state, action), None
 
