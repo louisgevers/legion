@@ -118,7 +118,7 @@ class Runtime:
         sensor_data = self.physics.get_sensor_data(physics_state)
 
         # Compute transition components
-        obs = self.task.observe(state.task, sensor_data)
+        obs = self.task.observe(state.task, sensor_data, state.actuator)
         reward, metrics_reward = self.task.reward(state.task, sensor_data, action)
         done = self.task.terminate(state.task, sensor_data)
 
@@ -165,7 +165,7 @@ class Runtime:
     def observe(self, state: RuntimeState) -> ArrayLike:
         """Convenience function for current observations (e.g., after a reset)"""
         sensor_data = self.physics.get_sensor_data(state.physics)
-        obs = self.task.observe(state.task, sensor_data)
+        obs = self.task.observe(state.task, sensor_data, state.actuator)
         return obs
 
     def get_sensor_data(self, state: RuntimeState) -> SensorData:

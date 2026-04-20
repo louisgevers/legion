@@ -9,7 +9,7 @@ from numpy.typing import ArrayLike
 from legion.registry import OBSERVATIONS, register
 from legion.backend import Backend
 from legion.embodiment import Embodiment
-from legion.actuator import Actuator
+from legion.actuator import Actuator, ActuatorState
 from legion.physics import SensorData
 
 
@@ -30,6 +30,7 @@ class ObsTerm(Protocol):
         self,
         signals: tuple[ArrayLike, ...],
         sensor_data: SensorData,
+        actuator: ActuatorState,
     ) -> ArrayLike: ...
 
 
@@ -42,7 +43,10 @@ class PrevActionObs:
         self.size = actuator.n_u
 
     def __call__(
-        self, signals: tuple[ArrayLike, ...], sensor_data: SensorData
+        self,
+        signals: tuple[ArrayLike, ...],
+        sensor_data: SensorData,
+        actuator: ActuatorState,
     ) -> ArrayLike:
         prev_action = signals[0]
         return prev_action
@@ -63,7 +67,10 @@ class LinearVelocityCommandObs:
         self.size = size
 
     def __call__(
-        self, signals: tuple[ArrayLike, ...], sensor_data: SensorData
+        self,
+        signals: tuple[ArrayLike, ...],
+        sensor_data: SensorData,
+        actuator: ActuatorState,
     ) -> ArrayLike:
         vel_cmd = signals[0][: self.size]
         return vel_cmd
@@ -79,7 +86,10 @@ class AngularVelocityCommandObs:
         pass
 
     def __call__(
-        self, signals: tuple[ArrayLike, ...], sensor_data: SensorData
+        self,
+        signals: tuple[ArrayLike, ...],
+        sensor_data: SensorData,
+        actuator: ActuatorState,
     ) -> ArrayLike:
         ang_vel_cmd = signals[0][:1]
         return ang_vel_cmd
@@ -95,7 +105,10 @@ class JointPositionsObs:
         self.q_nominal = backend.array(embodiment.q_nominal)
 
     def __call__(
-        self, signals: tuple[ArrayLike, ...], sensor_data: SensorData
+        self,
+        signals: tuple[ArrayLike, ...],
+        sensor_data: SensorData,
+        actuator: ActuatorState,
     ) -> ArrayLike:
         return sensor_data.q - self.q_nominal
 
@@ -109,7 +122,10 @@ class JointVelocitiesObs:
         self.size = embodiment.n_joints
 
     def __call__(
-        self, signals: tuple[ArrayLike, ...], sensor_data: SensorData
+        self,
+        signals: tuple[ArrayLike, ...],
+        sensor_data: SensorData,
+        actuator: ActuatorState,
     ) -> ArrayLike:
         return sensor_data.dq
 
@@ -125,7 +141,10 @@ class GravityVectorObs:
         self.gravity_vector = self.backend.array([0, 0, -1])
 
     def __call__(
-        self, signals: tuple[ArrayLike, ...], sensor_data: SensorData
+        self,
+        signals: tuple[ArrayLike, ...],
+        sensor_data: SensorData,
+        actuator: ActuatorState,
     ) -> ArrayLike:
         vector = self.backend.quat_rotate(
             sensor_data.base_quat, self.gravity_vector, inverse=True
@@ -158,7 +177,10 @@ class BaseLinearVelocityObs:
         }[frame]
 
     def __call__(
-        self, signals: tuple[ArrayLike, ...], sensor_data: SensorData
+        self,
+        signals: tuple[ArrayLike, ...],
+        sensor_data: SensorData,
+        actuator: ActuatorState,
     ) -> ArrayLike:
         return self.linear_velocity_fn(sensor_data)
 
@@ -173,7 +195,10 @@ class BaseAngularVelocityObs:
         self.size = 3
 
     def __call__(
-        self, signals: tuple[ArrayLike, ...], sensor_data: SensorData
+        self,
+        signals: tuple[ArrayLike, ...],
+        sensor_data: SensorData,
+        actuator: ActuatorState,
     ) -> ArrayLike:
         return sensor_data.local_base_angular_vel(self.backend)
 
@@ -187,6 +212,9 @@ class FootContactsObs:
         self.size = embodiment.n_feet
 
     def __call__(
-        self, signals: tuple[ArrayLike, ...], sensor_data: SensorData
+        self,
+        signals: tuple[ArrayLike, ...],
+        sensor_data: SensorData,
+        actuator: ActuatorState,
     ) -> ArrayLike:
         return sensor_data.foot_contacts

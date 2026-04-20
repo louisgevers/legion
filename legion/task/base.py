@@ -8,6 +8,7 @@ from numpy.typing import ArrayLike
 
 from legion.backend import Backend, RNGKey
 from legion.physics import SensorData
+from legion.actuator import ActuatorState
 
 from .signals import Signal
 from .obs import ObsTerm
@@ -89,7 +90,9 @@ class Task:
         )
         return TaskState(signals=signals)
 
-    def observe(self, task_state: TaskState, sensor_data: SensorData) -> ArrayLike:
+    def observe(
+        self, task_state: TaskState, sensor_data: SensorData, actuator: ActuatorState
+    ) -> ArrayLike:
         signals = tuple(
             # For each observation, collect the list of signals
             tuple(task_state.signals[i] for i in idx)
@@ -97,7 +100,8 @@ class Task:
             for idx in self._sig_indices_obs
         )
         observations = tuple(
-            obs(signal, sensor_data) for obs, signal in zip(self.observations, signals)
+            obs(signal, sensor_data, actuator)
+            for obs, signal in zip(self.observations, signals)
         )
         if len(observations) == 0:
             return self.backend.zeros((0,))
