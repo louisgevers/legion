@@ -6,7 +6,7 @@
 from numpy.typing import ArrayLike
 from typing import Protocol, NamedTuple
 
-from legion.backend import Backend
+from legion.backend import Backend, RNGKey
 from legion.embodiment import Embodiment
 from legion.physics import SensorData
 
@@ -20,7 +20,7 @@ class Actuator(Protocol):
 
     def __init__(self, backend: Backend, embodiment: Embodiment, **kwargs): ...
 
-    def reset(self) -> ActuatorState: ...
+    def reset(self, rng: RNGKey) -> ActuatorState: ...
     def step(self, state: ActuatorState) -> ActuatorState: ...
 
     def tau(

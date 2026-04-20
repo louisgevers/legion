@@ -71,7 +71,9 @@ class Runtime:
         return self.physics.backend
 
     def reset(self, rng: RNGKey) -> RuntimeState:
-        rng, task_rng, dr_rng, dr_apply_rng = self.backend.rng_split(rng, num=4)
+        rng, task_rng, actuator_rng, dr_rng, dr_apply_rng = self.backend.rng_split(
+            rng, num=5
+        )
 
         # Initial robot state
         q_init = self.backend.array(self.embodiment.q_nominal)
@@ -86,7 +88,7 @@ class Runtime:
 
         return RuntimeState(
             physics=physics_state,
-            actuator=self.actuator.reset(),
+            actuator=self.actuator.reset(actuator_rng),
             task=self.task.reset(task_rng),
             domain_randomization=domain_randomization_state,
             rng=rng,

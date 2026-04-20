@@ -7,7 +7,7 @@ from typing import Literal
 from numpy.typing import ArrayLike
 
 from legion.registry import ACTUATORS, register
-from legion.backend import Backend
+from legion.backend import Backend, RNGKey
 from legion.embodiment import Embodiment
 from legion.physics import SensorData
 
@@ -44,7 +44,7 @@ class EkebergActuator:
             "antagonist": u_diff_sum_antagonist,
         }[control_mode]
 
-    def reset(self) -> ActuatorState:
+    def reset(self, rng: RNGKey) -> ActuatorState:
         # No state
         return ActuatorState()
 
