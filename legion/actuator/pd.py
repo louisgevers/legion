@@ -34,12 +34,8 @@ class PDActuator:
         # No state
         return ActuatorState()
 
-    def step(self, state: ActuatorState, dt: float) -> ActuatorState:
-        # No state
-        return state
-
-    def tau(
-        self, u: ArrayLike, sensor_data: SensorData, state: ActuatorState
-    ) -> ArrayLike:
+    def step(
+        self, u: ArrayLike, sensor_data: SensorData, state: ActuatorState, dt: float
+    ) -> tuple[ArrayLike, ActuatorState]:
         qdes = self.q_nominal + self.gain * u
-        return self.kp * (qdes - sensor_data.q) - self.kd * sensor_data.dq
+        return self.kp * (qdes - sensor_data.q) - self.kd * sensor_data.dq, state

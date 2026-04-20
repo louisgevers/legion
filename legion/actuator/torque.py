@@ -26,11 +26,7 @@ class TorqueActuator:
         # No state
         return ActuatorState()
 
-    def step(self, state: ActuatorState, dt: float) -> ActuatorState:
-        # No state
-        return state
-
-    def tau(
-        self, u: ArrayLike, sensor_data: SensorData, state: ActuatorState
-    ) -> ArrayLike:
-        return u * self.gain
+    def step(
+        self, u: ArrayLike, sensor_data: SensorData, state: ActuatorState, dt: float
+    ) -> tuple[ArrayLike, ActuatorState]:
+        return u * self.gain, state

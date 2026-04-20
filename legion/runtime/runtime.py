@@ -192,15 +192,14 @@ class Runtime:
         sensor_data = self.physics.get_sensor_data(physics_state)
 
         # Compute torque (use copy of the action to avoid accidental inplace edits)
-        tau = self.actuator.tau(action.copy(), sensor_data, actuator_state)
+        tau, actuator_state = self.actuator.step(
+            action.copy(), sensor_data, actuator_state, self._actuator_dt
+        )
 
         # Advance simulation at actuator frequency
         physics_state = self._step_physics(
             physics_state, tau, n=self._actuator_decimation
         )
-
-        # Step the actuator
-        actuator_state = self.actuator.step(actuator_state, self._actuator_dt)
 
         return (physics_state, actuator_state, action), None
 

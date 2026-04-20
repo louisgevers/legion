@@ -48,13 +48,9 @@ class EkebergActuator:
         # No state
         return ActuatorState()
 
-    def step(self, state: ActuatorState) -> ActuatorState:
-        # No state
-        return state
-
-    def tau(
-        self, u: ArrayLike, sensor_data: SensorData, state: ActuatorState
-    ) -> ArrayLike:
+    def step(
+        self, u: ArrayLike, sensor_data: SensorData, state: ActuatorState, dt: float
+    ) -> tuple[ArrayLike, ActuatorState]:
         # Split action into flexor/extensor difference and summation
         u_diff, u_sum = self._u_diff_sum_fn(u)
 
@@ -65,7 +61,7 @@ class EkebergActuator:
         tau_active = self.alpha * u_diff + self.beta * u_sum * delta_theta
         tau_passive = self.beta * self.gamma * delta_theta - self.delta * sensor_data.dq
 
-        return tau_active + tau_passive
+        return tau_active + tau_passive, state
 
 
 def u_diff_sum_individual(u: ArrayLike) -> tuple[ArrayLike, ArrayLike]:
