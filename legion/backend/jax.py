@@ -23,6 +23,7 @@ class JaxBackend:
     array = staticmethod(jnp.array)
     zeros = staticmethod(jnp.zeros)
     ones = staticmethod(jnp.ones)
+    arange = staticmethod(jnp.arange)
     concatenate = staticmethod(jnp.concatenate)
     append = staticmethod(jnp.append)
     tile = staticmethod(jnp.tile)

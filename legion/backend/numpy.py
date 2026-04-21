@@ -17,6 +17,7 @@ class NumpyBackend:
     array = staticmethod(np.array)
     zeros = staticmethod(np.zeros)
     ones = staticmethod(np.ones)
+    arange = staticmethod(np.arange)
     concatenate = staticmethod(np.concatenate)
     append = staticmethod(np.append)
     tile = staticmethod(np.tile)

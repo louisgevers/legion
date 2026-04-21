@@ -63,6 +63,10 @@ class MJXPhysics:
         # Store q_directions
         self.q_dir = self.backend.array(embodiment.q_directions)
 
+        # Contact parameters
+        self._is_pyramidal = self._mj_model.opt.cone == mujoco.mjtCone.mjCONE_PYRAMIDAL
+        self._foot_condim = int(self._mj_model.geom_condim[self._foot_geom_ids].min())
+
     @property
     def dt(self) -> float:
         return self._mj_model.opt.timestep
@@ -197,8 +201,39 @@ class MJXPhysics:
             active_contacts[:, None] & foot_contact_geoms & floor_contact_geoms[:, None]
         )  # (233, n_feet)
 
-        # efc_address maps each contact to its normal-force row in efc_force
-        normal_forces = state.data.efc_force[state.data.contact.efc_address]  # (233,)
+        if self._is_pyramidal:
+            normal_forces = self._decode_pyramid_normal_force(
+                state.data.efc_force,
+                state.data.contact.efc_address,
+                condim=self._foot_condim,
+            )
+        else:
+            normal_forces = state.data.efc_force[state.data.contact.efc_address]
 
         # Sum normal forces per foot
         return self.backend.sum(normal_forces[:, None] * mask, axis=0)
+
+    def _decode_pyramid_normal_force(
+        self, efc_force: ArrayLike, efc_address: ArrayLike, condim: int
+    ) -> ArrayLike:
+        """Convert pyramid representation to normal contact force.
+        JAX-friendly adaptation from mju_decodePyramid.
+        https://github.com/google-deepmind/mujoco/blob/3325971840e92177ca3a38a539f446cf739b36cc/src/engine/engine_util_misc.c#L1266
+        """
+        if condim == 1:
+            # Frictionless, normal force stored directly
+            normal = efc_force[efc_address]  # (n_contacts)
+            return normal[:, None]  # (n_contacts, 1)
+
+        n_pyramid = 2 * (condim - 1)
+
+        # Build index matrix (n_index, n_pyramid)
+        offsets = self.backend.arange(n_pyramid)  # (n_contacts, n_pyramid)
+        indices = efc_address[:, None] + offsets  # (n_contacts, n_pyramid)
+
+        pyramid = efc_force[indices]  # (n_contacts, n_pyramid)
+
+        # Normal forces is sum of pyramid values
+        f_normal = self.backend.sum(pyramid, axis=1)  # (n_contacts)
+
+        return f_normal
