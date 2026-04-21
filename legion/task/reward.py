@@ -70,6 +70,8 @@ class LinearVelocityTrackingReward:
         action: ArrayLike,
     ):
         cmd = signals[0][: self.size]
+        if len(cmd) == 1:
+            cmd = self.backend.append(cmd, 0)
         actual = self.linear_velocity_fn(sensor_data)[:2]  # vx, vy
         error = self.backend.sum(self.backend.square(actual - cmd))
         return self.backend.exp(-error / self.sensitivity)

@@ -18,6 +18,7 @@ class NumpyBackend:
     zeros = staticmethod(np.zeros)
     ones = staticmethod(np.ones)
     concatenate = staticmethod(np.concatenate)
+    append = staticmethod(np.append)
     tile = staticmethod(np.tile)
     where = staticmethod(np.where)
     roll = staticmethod(np.roll)

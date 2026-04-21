@@ -24,6 +24,7 @@ class JaxBackend:
     zeros = staticmethod(jnp.zeros)
     ones = staticmethod(jnp.ones)
     concatenate = staticmethod(jnp.concatenate)
+    append = staticmethod(jnp.append)
     tile = staticmethod(jnp.tile)
     where = staticmethod(jnp.where)
     roll = staticmethod(jnp.roll)
