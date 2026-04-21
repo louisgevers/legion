@@ -1,7 +1,7 @@
 <mujoco model="go2">
     <compiler angle="radian" meshdir="../meshes" autolimits="true" />
 
-    <option iterations="1" ls_iterations="5">
+    <option iterations="2" ls_iterations="5">
         <flag eulerdamp="disable" />
     </option>
 
