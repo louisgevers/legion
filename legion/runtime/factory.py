@@ -98,8 +98,9 @@ def make_runtime(cfg: dict) -> Runtime:
 
     # Build runtime
     # - depends on embodiment, physics, actuator, and task
+    runtime_kwargs = cfg.get("runtime", {})
     return Runtime(
-        embodiment, physics, actuator, task, domain_randomization, **cfg["runtime"]
+        embodiment, physics, actuator, task, domain_randomization, **runtime_kwargs
     )
 
 

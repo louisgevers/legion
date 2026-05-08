@@ -39,14 +39,20 @@ class Runtime:
         actuator: Actuator,
         task: Task,
         domain_randomization: DomainRandomization,
-        actuator_hz: float,
-        policy_hz: float,
+        actuator_hz: float | None = None,
+        policy_hz: float | None = None,
     ):
         self.embodiment = embodiment
         self.physics = physics
         self.actuator = actuator
         self.task = task
         self.domain_randomization = domain_randomization
+
+        # Set frequencies to physics frequency if not defined
+        if actuator_hz is None:
+            actuator_hz = int(round(1.0 / physics.dt))
+        if policy_hz is None:
+            policy_hz = int(round(1.0 / physics.dt))
 
         # Compute static decimations for different control loop frequencies
         physics_hz = int(round(1.0 / physics.dt))
