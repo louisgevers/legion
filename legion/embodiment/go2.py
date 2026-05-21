@@ -17,6 +17,7 @@ class Go2(NamedTuple):
     n_links: int = 13  # 3 per leg + base
     n_actuators: int = 12
     n_feet: int = 4
+    base_name: str = "base"
     joint_names: tuple[str, ...] = tuple(
         [
             f"{leg}_{joint}_joint"
@@ -72,6 +73,7 @@ class Go2LockedHips(NamedTuple):
     n_links: int = 13  # 3 per leg + base
     n_actuators: int = 8
     n_feet: int = 4
+    base_name: str = "base"
     joint_names: tuple[str, ...] = tuple(
         [
             f"{leg}_{joint}_joint"

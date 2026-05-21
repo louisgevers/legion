@@ -15,6 +15,7 @@ class Embodiment(Protocol):
     n_links: int
     n_actuators: int
     n_feet: int
+    base_name: str
     joint_names: tuple[str, ...]
     actuator_names: tuple[str, ...]
     feet_names: tuple[str, ...]

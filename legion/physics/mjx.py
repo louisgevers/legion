@@ -45,7 +45,7 @@ class MJXPhysics:
 
         # Precompute joint indices
         self._base_qpos_idx, self._base_qvel_idx = mj_base_indices(
-            self._mj_model, self.backend
+            self._mj_model, self.backend, embodiment.base_name
         )
         self._joint_qpos_idx, self._joint_qvel_idx = mj_joint_indices(
             self._mj_model, embodiment, self.backend
@@ -58,7 +58,7 @@ class MJXPhysics:
         self._foot_geom_ids = mj_foot_geom_ids(self._mj_model, embodiment, self.backend)
 
         # Load base body index
-        self._base_body_idx = self._mj_model.body("base").id
+        self._base_body_idx = self._mj_model.body(embodiment.base_name).id
 
         # Store q_directions
         self.q_dir = self.backend.array(embodiment.q_directions)

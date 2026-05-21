@@ -43,7 +43,7 @@ class MujocoPhysics:
 
         # Precompute joint indices
         self._base_qpos_idx, self._base_qvel_idx = mj_base_indices(
-            self._mj_model, self.backend
+            self._mj_model, self.backend, embodiment.base_name
         )
         self._joint_qpos_idx, self._joint_qvel_idx = mj_joint_indices(
             self._mj_model, embodiment, self.backend
@@ -56,7 +56,7 @@ class MujocoPhysics:
         self._foot_geom_ids = mj_foot_geom_ids(self._mj_model, embodiment, self.backend)
 
         # Load base body index
-        self._base_body_idx = self._mj_model.body("base").id
+        self._base_body_idx = self._mj_model.body(embodiment.base_name).id
 
     @property
     def dt(self) -> float:
@@ -125,7 +125,7 @@ class MujocoPhysics:
 
     def add_base_mass(self, state: MujocoState, mass: float) -> MujocoState:
         # MuJoCo model is directly mutable
-        state.model.body("base").mass += mass
+        state.model.body(self.embodiment.base_name).mass += mass
         return state
 
     def scale_masses(self, state: MujocoState, scales: ArrayLike) -> MujocoState:
@@ -178,13 +178,13 @@ class MujocoPhysics:
 
 
 def mj_base_indices(
-    mj_model: mujoco._MjBindModel, backend: Backend
+    mj_model: mujoco._MjBindModel, backend: Backend, base_name: str
 ) -> tuple[ArrayLike, ArrayLike]:
     """Extract floating base qpos and qvel indices given the model"""
-    qpos_adr = mj_model.joint("base").qposadr[0]
+    qpos_adr = mj_model.joint(base_name).qposadr[0]
     base_qpos_idx = backend.array(range(qpos_adr, qpos_adr + 7))  # xyz + quaternion
 
-    qvel_adr = mj_model.joint("base").dofadr[0]
+    qvel_adr = mj_model.joint(base_name).dofadr[0]
     base_qvel_idx = backend.array(
         range(qvel_adr, qvel_adr + 6)
     )  # linear + angular velocity
