@@ -6,8 +6,11 @@
 import time
 import datetime
 import tqdm
+from typing import Callable
+from numpy.typing import ArrayLike
 
 from legion.backend import RNGKey
+from legion.physics import SensorData
 from legion.policy import Policy
 from legion.runtime import Runtime
 from legion.viewer import make_viewer
@@ -72,6 +75,81 @@ class ViewerRunner:
                 rng, key = runtime.backend.rng_split(rng)
                 state = jit_reset(key)
                 obs = jit_observe(state)
+
+            # Sync viewer
+            viewer.render(state.physics)
+
+            # Update progress bar
+            pbar.update(1)
+
+            # Schedule next frame time
+            sim_time = runtime.physics.get_sensor_data(state.physics).t
+            while time.perf_counter() - start_time < sim_time:
+                continue
+
+        # Close the viewer
+        viewer.close()
+
+    def run_controller(
+        self,
+        runtime: Runtime,
+        controller: Callable[[SensorData], ArrayLike],
+        rng: RNGKey,
+    ):
+        # Create viewer
+        viewer = make_viewer(runtime.physics)
+
+        # JIT runtime functions for viewer
+        jit_start_time = time.perf_counter()
+        print("Starting JIT of runtime functions...")
+        jit_reset = runtime.backend.jit(lambda rng: runtime.reset(rng))
+        jit_step = runtime.backend.jit(
+            lambda state, action: runtime.step(state, action)
+        )
+        jit_sensors = runtime.backend.jit(lambda state: runtime.get_sensor_data(state))
+
+        # Warm up
+        warmup_rng = runtime.backend.rng_seed(42)
+        warmup_u = runtime.backend.zeros(runtime.actuator.n_u)
+        warmup_state = jit_reset(warmup_rng)
+        _ = jit_sensors(warmup_state)
+        _ = jit_step(warmup_state, warmup_u)
+        print(
+            f"JIT took {datetime.timedelta(seconds=time.perf_counter() - jit_start_time)}"
+        )
+
+        # Initialization
+        state = jit_reset(rng)
+        sensors = jit_sensors(state)
+
+        # Progress bar for FPS tracking
+        pbar = tqdm.tqdm(unit="steps")
+
+        # Simulation loop
+        start_time = time.perf_counter()
+        ep_reward = 0
+        ep_length = 0
+        while viewer.is_running():
+            # Step
+            rng, key = runtime.backend.rng_split(rng)
+            u = controller(sensors)
+            state, obs, reward, done, metrics = jit_step(state, u)
+            sensors = jit_sensors(state)
+
+            # Track stats
+            ep_reward += reward
+            ep_length += 1
+
+            # Reset if done (FIXME: could be sped up for GPU cases)
+            if runtime.backend.any(done):
+                print(f"Episode reward: {ep_reward:.2f} (length={ep_length})")
+                ep_reward = 0
+                ep_length = 0
+                start_time = time.perf_counter()
+
+                rng, key = runtime.backend.rng_split(rng)
+                state = jit_reset(key)
+                sensors = jit_sensors(state)
 
             # Sync viewer
             viewer.render(state.physics)
