@@ -124,6 +124,8 @@ class MJXPhysics:
             ),  # Only when distance is negative is there a contact
             foot_contacts=self._compute_foot_contacts(state),
             foot_normal_forces=self._compute_foot_normal_forces(state),
+            # TODO: implement for MJX
+            foot_grfs=None,
         )
 
     def set_ground_friction(self, state: MJXState, friction: float) -> MJXState:
